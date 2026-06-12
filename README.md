@@ -1,3 +1,4 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/0_h2Gwpe)
 # AIASE 2026 期末專案 Starter Repo
 
 > 在 Hermes Agent 上打造可驗證的 Skill。詳細規格請看課程公布的Final Project細節。本檔只說明 starter repo 怎麼開始、怎麼自測、繳交前要檢查什麼。
