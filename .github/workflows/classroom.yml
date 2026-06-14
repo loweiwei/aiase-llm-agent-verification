@@ -79,14 +79,47 @@ jobs:
           test-name: Check Pairwise role file format
           setup-command: ""
           command: |
-            test -f PAIRWISE_ROLE.md &&
-            role="$(awk -F': *' '$1 == "role" { print $2; exit }' PAIRWISE_ROLE.md)" &&
-            skill_path="$(awk -F': *' '$1 == "skill_path" { print $2; exit }' PAIRWISE_ROLE.md)" &&
-            { test "$role" = "code-author" || test "$role" = "bug-hunter"; } &&
-            case "$skill_path" in skills/*/) true ;; *) false ;; esac &&
-            test -d "$skill_path" &&
-            if test "$role" = "code-author"; then case "$skill_path" in skills/code-author-*/) true ;; *) false ;; esac; fi &&
-            if test "$role" = "bug-hunter"; then case "$skill_path" in skills/bug-hunter-*/) true ;; *) false ;; esac; fi
+            python3 - <<'PY'
+            import re
+            import sys
+            from pathlib import Path
+
+            path = Path("PAIRWISE_ROLE.md")
+            if not path.is_file():
+                sys.exit("PAIRWISE_ROLE.md missing")
+
+            text = path.read_text(encoding="utf-8")
+            pairs = re.findall(
+                r"(?m)^\s*-\s*role:\s*(code-author|bug-hunter)\s*$\n"
+                r"^\s*skill_path:\s*([^#\s]+)\s*$",
+                text,
+            )
+
+            roles = {}
+            for role, skill_path in pairs:
+                if role in roles:
+                    sys.exit(f"duplicate role: {role}")
+                roles[role] = skill_path
+
+            required = {"code-author", "bug-hunter"}
+            missing = required - set(roles)
+            extra = set(roles) - required
+            if missing or extra:
+                sys.exit(f"bad roles; missing={sorted(missing)} extra={sorted(extra)}")
+
+            for role, skill_path in roles.items():
+                skill_path = skill_path.rstrip("/")
+                if not skill_path.startswith("skills/"):
+                    sys.exit(f"{role}: skill_path must be under skills/: {skill_path}")
+                if role == "code-author" and not Path(skill_path).name.startswith("code-author-"):
+                    sys.exit(f"{role}: expected skills/code-author-*: {skill_path}")
+                if role == "bug-hunter" and not Path(skill_path).name.startswith("bug-hunter-"):
+                    sys.exit(f"{role}: expected skills/bug-hunter-*: {skill_path}")
+                if not Path(skill_path).is_dir():
+                    sys.exit(f"{role}: directory not found: {skill_path}")
+
+            print("PAIRWISE_ROLE.md declares both code-author and bug-hunter")
+            PY
           timeout: 10
           max-score: 15
 
@@ -97,20 +130,66 @@ jobs:
           test-name: Check Pairwise skill format
           setup-command: ""
           command: |
-            skill_path="$(awk -F': *' '$1 == "skill_path" { print $2; exit }' PAIRWISE_ROLE.md)" &&
-            dir="${skill_path%/}" &&
-            test -n "$dir" &&
-            test -f "$dir/SKILL.md" &&
-            test -d "$dir/scripts" &&
-            test "$(head -n 1 "$dir/SKILL.md")" = "---" &&
-            test -n "$(awk 'NR > 1 && $0 == "---" { print NR; exit }' "$dir/SKILL.md")" &&
-            name="$(awk 'NR == 1 && $0 == "---" { in_fm = 1; next } in_fm && $0 == "---" { exit } in_fm && /^name:[[:space:]]*/ { sub(/^name:[[:space:]]*/, ""); gsub(/^["'"'"']|["'"'"']$/, ""); print; exit }' "$dir/SKILL.md")" &&
-            test "$name" = "$(basename "$dir")" &&
-            awk 'NR == 1 && $0 == "---" { in_fm = 1; next } in_fm && $0 == "---" { exit } in_fm { print }' "$dir/SKILL.md" | grep -Eq '^description:[[:space:]]*.+' &&
-            awk 'NR == 1 && $0 == "---" { in_fm = 1; next } in_fm && $0 == "---" { exit } in_fm { print }' "$dir/SKILL.md" | grep -Eq '^version:[[:space:]]*.+' &&
-            grep -Fxq "## When to Use" "$dir/SKILL.md" &&
-            grep -Fxq "## Procedure" "$dir/SKILL.md" &&
-            grep -Fxq "## Verification" "$dir/SKILL.md"
+            python3 - <<'PY'
+            import re
+            import sys
+            from pathlib import Path
+
+            role_file = Path("PAIRWISE_ROLE.md")
+            text = role_file.read_text(encoding="utf-8")
+            pairs = re.findall(
+                r"(?m)^\s*-\s*role:\s*(code-author|bug-hunter)\s*$\n"
+                r"^\s*skill_path:\s*([^#\s]+)\s*$",
+                text,
+            )
+
+            roles = {role: skill_path.rstrip("/") for role, skill_path in pairs}
+            if set(roles) != {"code-author", "bug-hunter"}:
+                sys.exit("PAIRWISE_ROLE.md must declare both code-author and bug-hunter")
+
+            def frontmatter(skill_md: Path) -> dict[str, str]:
+                lines = skill_md.read_text(encoding="utf-8").splitlines()
+                if not lines or lines[0] != "---":
+                    sys.exit(f"{skill_md}: missing opening frontmatter marker")
+                try:
+                    end = lines[1:].index("---") + 1
+                except ValueError:
+                    sys.exit(f"{skill_md}: missing closing frontmatter marker")
+
+                data = {}
+                for line in lines[1:end]:
+                    if ":" in line:
+                        key, value = line.split(":", 1)
+                        data[key.strip()] = value.strip().strip("\"'")
+                body = "\n".join(lines[end + 1 :])
+                return data, body
+
+            for role, skill_path in sorted(roles.items()):
+                skill_dir = Path(skill_path)
+                skill_md = skill_dir / "SKILL.md"
+                scripts_dir = skill_dir / "scripts"
+
+                if not skill_md.is_file():
+                    sys.exit(f"{role}: missing {skill_md}")
+                if not scripts_dir.is_dir():
+                    sys.exit(f"{role}: missing {scripts_dir}")
+
+                meta, body = frontmatter(skill_md)
+                expected_name = skill_dir.name
+
+                if meta.get("name") != expected_name:
+                    sys.exit(f"{role}: SKILL.md name must be {expected_name}")
+                if not meta.get("description"):
+                    sys.exit(f"{role}: missing description")
+                if not meta.get("version"):
+                    sys.exit(f"{role}: missing version")
+
+                for heading in ["## When to Use", "## Procedure", "## Verification"]:
+                    if heading not in body:
+                        sys.exit(f"{role}: missing heading {heading}")
+
+            print("both Pairwise skills are present and valid")
+            PY
           timeout: 10
           max-score: 10
 
