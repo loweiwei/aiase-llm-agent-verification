@@ -1,0 +1,39 @@
+{
+  "task_id": "open_test_killer_valid_parentheses",
+  "entry_point": "valid_parentheses",
+  "description": "Return true if the string has valid matching brackets. Support (), [], {}.",
+  "max_tests": 5,
+  "reference_code": "def valid_parentheses(s):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack\n",
+  "mutants": [
+    {
+      "id": "COUNT_ONLY",
+      "code": "def valid_parentheses(s):\n    return s.count('(') == s.count(')') and s.count('[') == s.count(']') and s.count('{') == s.count('}')\n"
+    },
+    {
+      "id": "ACCEPTS_LEFTOVER_OPEN",
+      "code": "def valid_parentheses(s):\n    stack = []\n    pairs = {')':'(', ']':'[', '}':'{'}\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return True\n"
+    },
+    {
+      "id": "IGNORES_EARLY_CLOSE",
+      "code": "def valid_parentheses(s):\n    stack = []\n    pairs = {')':'(', ']':'[', '}':'{'}\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs and stack:\n            if stack.pop() != pairs[ch]:\n                return False\n    return not stack\n"
+    },
+    {
+      "id": "WRONG_SQUARE_MAPPING",
+      "code": "def valid_parentheses(s):\n    pairs = {')': '(', ']': '(', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack\n"
+    },
+    {
+      "id": "PARENS_ONLY",
+      "code": "def valid_parentheses(s):\n    stack = []\n    for ch in s:\n        if ch == '(':\n            stack.append(ch)\n        elif ch == ')':\n            if not stack:\n                return False\n            stack.pop()\n    return not stack\n"
+    }
+  ],
+  "candidate_inputs": [
+    {"id": "crossed", "args": ["([)]"], "kwargs": {}},
+    {"id": "leftover", "args": ["((("], "kwargs": {}},
+    {"id": "early_close", "args": [")("], "kwargs": {}},
+    {"id": "mixed_valid", "args": ["([]{})"], "kwargs": {}},
+    {"id": "nested_valid", "args": ["{[()]}"], "kwargs": {}},
+    {"id": "deep_valid", "args": ["([{}])"], "kwargs": {}},
+    {"id": "wrong_close", "args": ["([}"], "kwargs": {}},
+    {"id": "empty", "args": [""], "kwargs": {}}
+  ]
+}

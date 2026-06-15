@@ -3,4 +3,4 @@
 # ⚠️  token 是個人機密,不可 commit 進任何 public/private repo,也不可貼到 chat / issue。
 # 本 starter 的 .gitignore 已擋 .env;若你改了路徑,請自己確保 token 不會被追蹤。
 
-AIASE_LITELLM_KEY=<YOUR_TOKEN>
+AIASE_LITELLM_KEY=

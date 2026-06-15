@@ -1,0 +1,37 @@
+{
+  "task_id": "open_test_killer_merge_intervals",
+  "entry_point": "merge_intervals",
+  "description": "Given a list of intervals [start, end], merge all overlapping or touching intervals. Return sorted merged intervals.",
+  "max_tests": 5,
+  "reference_code": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    items = sorted(intervals, key=lambda x: x[0])\n    merged = []\n    for start, end in items:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged\n",
+  "mutants": [
+    {
+      "id": "NO_SORT",
+      "code": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    merged = []\n    for start, end in intervals:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged\n"
+    },
+    {
+      "id": "NO_TOUCHING_MERGE",
+      "code": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    items = sorted(intervals, key=lambda x: x[0])\n    merged = []\n    for start, end in items:\n        if not merged or start >= merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged\n"
+    },
+    {
+      "id": "WRONG_END_UPDATE",
+      "code": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    items = sorted(intervals, key=lambda x: x[0])\n    merged = []\n    for start, end in items:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = end\n    return merged\n"
+    },
+    {
+      "id": "DROPS_FINAL_INTERVAL",
+      "code": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    items = sorted(intervals, key=lambda x: x[0])\n    merged = []\n    for start, end in items[:-1]:\n        if not merged or start > merged[-1][1]:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged\n"
+    },
+    {
+      "id": "EMPTY_CRASH",
+      "code": "def merge_intervals(intervals):\n    items = sorted(intervals, key=lambda x: x[0])\n    merged = [items[0]]\n    for start, end in items[1:]:\n        if start <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], end)\n        else:\n            merged.append([start, end])\n    return merged\n"
+    }
+  ],
+  "candidate_inputs": [
+    {"id": "unsorted_overlap", "args": [[[5, 7], [1, 3], [2, 6]]], "kwargs": {}},
+    {"id": "touching", "args": [[[1, 2], [2, 3]]], "kwargs": {}},
+    {"id": "separated", "args": [[[1, 2], [4, 5], [8, 9]]], "kwargs": {}},
+    {"id": "empty", "args": [[]], "kwargs": {}},
+    {"id": "nested", "args": [[[1, 10], [2, 3], [4, 8]]], "kwargs": {}},
+    {"id": "single", "args": [[[1, 2]]], "kwargs": {}}
+  ]
+}

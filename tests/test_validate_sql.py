@@ -1,10 +1,10 @@
-"""Tests for skills/text2sql-GITHUBID/scripts/validate_sql.py."""
+"""Tests for skills/text2sql-loweiwei/scripts/validate_sql.py."""
 
 import importlib.util
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-VS_PATH = REPO_ROOT / "skills" / "text2sql-GITHUBID" / "scripts" / "validate_sql.py"
+VS_PATH = REPO_ROOT / "skills" / "text2sql-loweiwei" / "scripts" / "validate_sql.py"
 
 
 def _load():

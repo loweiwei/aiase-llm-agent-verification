@@ -9,15 +9,15 @@
 
 ### 1. 從課程 starter repo 拉內容,推到你自己的 GitHub Classroom repo
 
-當你接受期末作業的 GitHub Classroom invitation 後,課程會在 `Netdb-NCKU` org 之下幫你開一個 private repo,名為 `final-project-<github_id>`(預設沒有內容)。你需要把本課程的 **starter repo** clone 下來,然後 push 到你自己的那個 classroom repo:
+當你接受期末作業的 GitHub Classroom invitation 後,課程會在 `Netdb-NCKU` org 之下幫你開一個 private repo,名為 `final-project-loweiwei`(預設沒有內容)。你需要把本課程的 **starter repo** clone 下來,然後 push 到你自己的那個 classroom repo:
 
 ```bash
 # (a) 從課程 starter 取得初始內容
-git clone https://github.com/Netdb-NCKU/aiase2026-final-project-Final-Project.git final-project-<github_id>
-cd final-project-<github_id>
+git clone https://github.com/Netdb-NCKU/aiase2026-final-project-Final-Project.git final-project-loweiwei
+cd final-project-loweiwei
 
 # (b) 把 origin 改成你自己的 classroom repo
-git remote set-url origin https://github.com/Netdb-NCKU/final-project-<github_id>.git
+git remote set-url origin https://github.com/Netdb-NCKU/final-project-loweiwei.git
 
 # (c) 把 starter 內容推到你的 classroom repo
 git push -u origin main
@@ -30,27 +30,27 @@ python -m pip install -r requirements.txt
 
 > 若 (c) 失敗、提示 "Updates were rejected because the remote contains work that you do not have locally",代表你的 classroom repo 不是完全空的(可能 GitHub 預設帶了一個 README 之類)。聯繫 TA 確認後再決定要 `git pull --rebase origin main` 合併、或重新初始化。
 
-### 2. 把所有 `<github_id>` / `GITHUBID` 改成你的 GitHub ID
+### 2. 把所有 `loweiwei` / `loweiwei` 改成你的 GitHub ID
 
-`<github_id>` 以 GitHub Classroom roster mapping 為準。需要改的地方:
+`loweiwei` 以 GitHub Classroom roster mapping 為準。需要改的地方:
 
-- `skills/text2sql-GITHUBID/`、`skills/code-author-GITHUBID/`、`skills/bug-hunter-GITHUBID/` 這三個骨架資料夾的名字
+- `skills/text2sql-loweiwei/`、`skills/code-author-loweiwei/`、`skills/bug-hunter-loweiwei/` 這三個骨架資料夾的名字
 - 每個 `SKILL.md` 的 frontmatter `name:` 欄位
 - `PAIRWISE_ROLE.md` 內的 `skill_path:`
-- Open Track 沒有骨架,請依 `OPEN_TRACK.md` 模板**自行建立** `skills/open-<short-name>-<github_id>/`(`<short-name>` 自取);完成後在 `OPEN_TRACK.md` 的「## 2. Skill 名稱與目錄」填入該路徑。
+- Open Track 沒有骨架,請依 `OPEN_TRACK.md` 模板**自行建立** `skills/open-<short-name>-loweiwei/`(`<short-name>` 自取);完成後在 `OPEN_TRACK.md` 的「## 2. Skill 名稱與目錄」填入該路徑。
 
 方便起見可用:
 
 ```bash
 GH=<your_github_id>
-find skills -depth -type d -name '*GITHUBID*' | while read d; do
-  mv "$d" "${d/GITHUBID/$GH}"
+find skills -depth -type d -name '*loweiwei*' | while read d; do
+  mv "$d" "${d/loweiwei/$GH}"
 done
-grep -rl 'GITHUBID' . | xargs sed -i '' "s/GITHUBID/$GH/g"   # macOS
-# grep -rl 'GITHUBID' . | xargs sed -i    "s/GITHUBID/$GH/g"  # Linux
+grep -rl 'loweiwei' . | xargs sed -i '' "s/loweiwei/$GH/g"   # macOS
+# grep -rl 'loweiwei' . | xargs sed -i    "s/loweiwei/$GH/g"  # Linux
 ```
 
-> 改完請以 `grep -r GITHUBID .` 確認沒有殘留。
+> 改完請以 `grep -r loweiwei .` 確認沒有殘留。
 
 ### 3. 安裝 Hermes Agent 並把 model provider 指向課程 LiteLLM Gateway
 
@@ -67,7 +67,7 @@ hermes doctor
 
 ```bash
 hermes model         # 應該看到 aiase/gemma4 或 aiase/gemini-2.5-flash
-hermes skills list   # 應看到 hello-aiase 與你的 text2sql-<github_id> 等
+hermes skills list   # 應看到 hello-aiase 與你的 text2sql-loweiwei 等
 ```
 
 ### 4. 跑煙霧測試與本地 dev set
@@ -80,11 +80,11 @@ hermes chat --toolsets skills -q '/hello-aiase {"name":"world"}'
 # 第一次自測前,先在本機產生 Basic dev set 的 SQLite 檔(dbs/*.sqlite 不入版控,需自行生成):
 python dev_set/basic/build_dbs.py
 # 之後就能跑 Basic 自測(run_dev 會在這些 DB 上以 bag equality 比對你的 SQL 與 gold_sql):
-python run_dev.py --skill text2sql-<github_id> --track basic
+python run_dev.py --skill text2sql-loweiwei --track basic
 
 # (c) Pairwise(對 reference 對手自測)
-python run_dev.py --skill code-author-<github_id> --track pairwise --role code-author
-python run_dev.py --skill bug-hunter-<github_id>  --track pairwise --role bug-hunter
+python run_dev.py --skill code-author-loweiwei --track pairwise --role code-author
+python run_dev.py --skill bug-hunter-loweiwei  --track pairwise --role bug-hunter
 ```
 
 `run_dev.py` 會把結果寫進 `dev_run_results/`。
@@ -107,10 +107,10 @@ python run_dev.py --skill bug-hunter-<github_id>  --track pairwise --role bug-hu
 │   └── hermes-env.example
 ├── skills/                                ← 你的 skill 與 reference 對手
 │   ├── hello-aiase/                       ← 煙霧測試,勿改
-│   ├── text2sql-GITHUBID/                 ← Basic Track 骨架,改名後填邏輯
-│   ├── code-author-GITHUBID/              ← Pairwise Code Author 骨架
-│   ├── bug-hunter-GITHUBID/               ← Pairwise Bug Hunter 骨架
-│   ├── (Open Track 自建:open-<short-name>-<github_id>/,參考 OPEN_TRACK.md)
+│   ├── text2sql-loweiwei/                 ← Basic Track 骨架,改名後填邏輯
+│   ├── code-author-loweiwei/              ← Pairwise Code Author 骨架
+│   ├── bug-hunter-loweiwei/               ← Pairwise Bug Hunter 骨架
+│   ├── (Open Track 自建:open-<short-name>-loweiwei/,參考 OPEN_TRACK.md)
 │   ├── reference-bug-hunter-conservative/ ← 課程提供,本機自測 Pairwise 對手
 │   ├── reference-bug-hunter-aggressive/
 │   ├── reference-bug-hunter-noisy/
@@ -134,9 +134,9 @@ python run_dev.py --skill bug-hunter-<github_id>  --track pairwise --role bug-hu
 
 繳交 deadline(2026/6/16 23:59 Asia/Taipei)前,確認 default branch 上有:
 
-- [ ] `skills/text2sql-<github_id>/SKILL.md` + scripts(Basic Track)
-- [ ] `skills/code-author-<github_id>/` **或** `skills/bug-hunter-<github_id>/`(Pairwise 二擇一)
-- [ ] `skills/open-<short-name>-<github_id>/`(Open Track,自取 short-name)
+- [ ] `skills/text2sql-loweiwei/SKILL.md` + scripts(Basic Track)
+- [ ] `skills/code-author-loweiwei/` **或** `skills/bug-hunter-loweiwei/`(Pairwise 二擇一)
+- [ ] `skills/open-<short-name>-loweiwei/`(Open Track,自取 short-name)
 - [ ] `PAIRWISE_ROLE.md`(指向上面選的 Pairwise skill)
 - [ ] `OPEN_TRACK.md`(七區塊齊全)
 - [ ] `report.md`

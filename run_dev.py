@@ -1,276 +1,57 @@
 #!/usr/bin/env python3
+"""Local dev-set runner for file-based AIASE results.
+
+Supports Basic Track and Pairwise Track roles while keeping compatibility helpers
+used by the repository tests.
 """
-run_dev.py — AIASE 2026 期末專案本地自測驅動程式
-
-本檔同時是「single source of truth」of:
-- extract_last_json_block(stdout): 從 Hermes stdout 擷取最後一段 fenced JSON
-- bag_equal(rows_a, rows_b):       SQL 結果的 multiset equality
-- run_sql(db_path, sql):           在 sqlite 上跑 read-only SQL
-- grade_basic / grade_pairwise:    本地對 dev set / reference 對手評分
-
-評分環境會 import 上面這些 helper,**不要在他處自行實作對比邏輯**。
-"""
-
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
-import re
-import shutil
-import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 from collections import Counter
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import aiase_contract as contract
 
 
 REPO_ROOT = Path(__file__).resolve().parent
-DEV_SET_DIR = REPO_ROOT / "dev_set"
 RESULTS_DIR = REPO_ROOT / "dev_run_results"
-
-HERMES_BIN = os.environ.get("HERMES_BIN", "hermes")
-HERMES_TIMEOUT_SEC = int(os.environ.get("HERMES_TIMEOUT_SEC", "120"))
-
-
-# ---------------------------------------------------------------------------
-# 1. JSON 輸出契約擷取
-# ---------------------------------------------------------------------------
-
-# 抓所有 ```json ... ``` 區塊(忽略開頭的 ```json 後可有任何 whitespace 直到 newline)
-_FENCED_JSON_RE = re.compile(
-    r"```json[ \t]*\r?\n(?P<body>.*?)\r?\n```",
-    re.DOTALL | re.IGNORECASE,
-)
+HERMES_BASE = ["hermes", "chat", "--toolsets", "skills,terminal", "--yolo", "-Q"]
+RUN_DEV_DEBUG_ENABLED = False
 
 
-def extract_last_json_block(stdout: str) -> Optional[dict]:
-    """
-    從 Hermes Agent 的 stdout 擷取「最後一段 fenced JSON 區塊」並解析。
+def log_progress(message: str) -> None:
+    if not RUN_DEV_DEBUG_ENABLED:
+        return
+    timestamp = time.strftime("%H:%M:%S")
+    print(f"[run_dev {timestamp}] {message}", file=sys.stderr, flush=True)
 
-    規格(規格書 §1.4):
-    - 多段 fenced JSON 時只取最後一段。
-    - 必須是合法 JSON、top-level 是 object。
-    - 不接受 trailing comma / comments / NaN / Infinity(json.loads 本身就會 reject)。
 
-    Returns:
-        dict — 解析後的 JSON object。
-        None — 找不到 / 解析失敗 / 不是 object。
-    """
-    if not isinstance(stdout, str):
+def make_debug_dir(debug: bool, debug_dir: str | None, skill: str | None) -> Path | None:
+    global RUN_DEV_DEBUG_ENABLED
+    RUN_DEV_DEBUG_ENABLED = bool(debug)
+    if not debug:
         return None
-    matches = _FENCED_JSON_RE.findall(stdout)
-    if not matches:
-        return None
-    body = matches[-1].strip()
-    try:
-        obj = json.loads(body)
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(obj, dict):
-        return None
-    return obj
-
-
-# ---------------------------------------------------------------------------
-# 2. Bag equality(SQL 結果 multiset 比對)
-# ---------------------------------------------------------------------------
-
-
-def _row_to_hashable(row: Any) -> tuple:
-    """sqlite cursor 回傳 tuple of (str|int|float|bytes|None);轉成 hashable 以利 Counter。"""
-    if isinstance(row, tuple):
-        return tuple(_cell(c) for c in row)
-    if isinstance(row, list):
-        return tuple(_cell(c) for c in row)
-    return (_cell(row),)
-
-
-def _cell(v: Any) -> Any:
-    if isinstance(v, bytes):
-        return ("__bytes__", v)
-    return v
-
-
-def bag_equal(rows_a: Iterable[Any], rows_b: Iterable[Any]) -> bool:
-    """
-    Multiset (bag) equality between two SQL result row collections.
-
-    規格(規格書 §4.1):
-    - 列順序不計。
-    - 重複列的次數**計入**(不是 set equality)。
-    - 欄位順序由 SELECT 子句決定(tuple 比對 — 兩邊 SELECT 不同欄位順序就會 fail)。
-    - column name / alias 不參與比對(只比 row tuple 的值)。
-
-    Returns True iff sorted multiset is equal.
-    """
-    a = [_row_to_hashable(r) for r in rows_a]
-    b = [_row_to_hashable(r) for r in rows_b]
-    if len(a) != len(b):
-        return False
-    return Counter(a) == Counter(b)
-
-
-# ---------------------------------------------------------------------------
-# 3. SQLite 執行
-# ---------------------------------------------------------------------------
-
-
-READ_ONLY_FORBIDDEN_KEYWORDS = re.compile(
-    r"\b(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|ATTACH|DETACH|REPLACE|TRUNCATE|VACUUM|PRAGMA)\b",
-    re.IGNORECASE,
-)
-
-
-def is_read_only_sql(sql: str) -> tuple[bool, str]:
-    """淺檢:不允許 DDL/DML 與多 statement。"""
-    if ";" in sql.strip().rstrip(";"):
-        return False, "Multiple SQL statements not allowed."
-    if READ_ONLY_FORBIDDEN_KEYWORDS.search(sql):
-        return False, "DDL/DML keyword detected."
-    return True, ""
-
-
-def run_sql(db_path: Path, sql: str, timeout_sec: float = 5.0) -> list[tuple]:
-    """
-    Run a read-only SQL on a sqlite DB, return rows as list of tuples.
-
-    Raises sqlite3.Error on syntax / runtime errors. Caller decides how to score.
-    """
-    con = sqlite3.connect(str(db_path), timeout=timeout_sec)
-    try:
-        con.execute("PRAGMA query_only = ON;")
-        cur = con.execute(sql)
-        return list(cur.fetchall())
-    finally:
-        con.close()
-
-
-# ---------------------------------------------------------------------------
-# 4. Hermes 呼叫
-# ---------------------------------------------------------------------------
-
-
-def hermes_available() -> bool:
-    return shutil.which(HERMES_BIN) is not None
-
-
-@dataclass
-class HermesResult:
-    ok: bool
-    stdout: str
-    stderr: str
-    returncode: int
-    elapsed_sec: float
-    error: str = ""
-
-
-def call_hermes_skill(slash_command: str, payload: dict) -> HermesResult:
-    """
-    呼叫 `hermes chat --toolsets skills -q '<slash_command> <payload_json>'`。
-
-    若 hermes 不在 PATH,回傳 ok=False 並標註 error,呼叫端可決定要 skip 還是 fail。
-    """
-    if not hermes_available():
-        return HermesResult(
-            ok=False, stdout="", stderr="", returncode=-1, elapsed_sec=0.0,
-            error=f"`{HERMES_BIN}` not found in PATH; set $HERMES_BIN or install Hermes Agent.",
-        )
-
-    payload_str = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    arg = f"{slash_command} {payload_str}"
-    cmd = [HERMES_BIN, "chat", "--toolsets", "skills", "-q", arg]
-
-    t0 = time.time()
-    try:
-        proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=HERMES_TIMEOUT_SEC, check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return HermesResult(
-            ok=False, stdout="", stderr="", returncode=-1,
-            elapsed_sec=time.time() - t0,
-            error=f"hermes timed out after {HERMES_TIMEOUT_SEC}s",
-        )
-    elapsed = time.time() - t0
-    return HermesResult(
-        ok=(proc.returncode == 0),
-        stdout=proc.stdout or "",
-        stderr=proc.stderr or "",
-        returncode=proc.returncode,
-        elapsed_sec=elapsed,
-    )
-
-
-# ---------------------------------------------------------------------------
-# 5. Dev set loader
-# ---------------------------------------------------------------------------
-
-
-def load_basic_tasks() -> list[dict]:
-    tasks = []
-    basic_dir = DEV_SET_DIR / "basic"
-    if not basic_dir.exists():
-        return tasks
-    for p in sorted(basic_dir.glob("task_nl2sql_*.json")):
-        try:
-            tasks.append(json.loads(p.read_text(encoding="utf-8")))
-        except json.JSONDecodeError as e:
-            print(f"[warn] skip invalid JSON: {p.name}: {e}", file=sys.stderr)
-    return tasks
-
-
-def load_pairwise_reference_tasks() -> list[dict]:
-    tasks = []
-    ref_dir = DEV_SET_DIR / "pairwise" / "reference_tasks"
-    if not ref_dir.exists():
-        return tasks
-    for p in sorted(ref_dir.glob("task_*.json")):
-        if p.name.endswith("_GROUND_TRUTH.json"):
-            continue
-        try:
-            tasks.append(json.loads(p.read_text(encoding="utf-8")))
-        except json.JSONDecodeError as e:
-            print(f"[warn] skip invalid JSON: {p.name}: {e}", file=sys.stderr)
-    return tasks
-
-
-def load_reference_ground_truth(task_id: str) -> Optional[dict]:
-    """
-    Return a dict with ground-truth fields (`clean_code`, `buggy_code`, `tricky_code`,
-    `bugs_in_buggy`, `bugs_in_tricky`, `test_cases`) for a reference task.
-
-    Looks for either:
-      - dev_set/pairwise/reference_tasks/<task_id>_GROUND_TRUTH.json (separated form), or
-      - dev_set/pairwise/reference_tasks/<task_id>.json (consolidated form, used by this repo)
-
-    For pairwise grading, this function also rewrites field names so callers can use
-    a single key shape regardless of which variant the buggy/tricky code came from.
-    """
-    base = DEV_SET_DIR / "pairwise" / "reference_tasks"
-    gt = base / f"{task_id}_GROUND_TRUTH.json"
-    if gt.exists():
-        path = gt
+    if debug_dir:
+        path = Path(debug_dir)
     else:
-        main = base / f"{task_id}.json"
-        if not main.exists():
-            return None
-        path = main
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-    # Normalize: callers may ask for `bugs` (sometimes meaning bugs_in_buggy).
-    data.setdefault("bugs", data.get("bugs_in_buggy", []))
-    return data
-
-
-# ---------------------------------------------------------------------------
-# 6. Track 評分流程
-# ---------------------------------------------------------------------------
+        RESULTS_DIR.mkdir(exist_ok=True)
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        safe_skill = skill or "unknown"
+        safe_skill = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in safe_skill)
+        path = RESULTS_DIR / f"debug_{stamp}_{safe_skill}"
+    path.mkdir(parents=True, exist_ok=True)
+    print(f"[run_dev debug] debug_dir={path}")
+    return path
 
 
 @dataclass
@@ -280,7 +61,7 @@ class TaskResult:
     reason: str = ""
     sql_returned: str = ""
     elapsed_sec: float = 0.0
-    extras: dict = field(default_factory=dict)
+    extras: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -294,255 +75,327 @@ class TrackReport:
     note: str = ""
 
     def to_dict(self) -> dict:
-        d = asdict(self)
-        d["pass_rate"] = (self.passed / self.total) if self.total else 0.0
-        return d
+        obj = asdict(self)
+        obj["pass_rate"] = self.passed / self.total if self.total else 0.0
+        return obj
 
 
-def grade_basic(skill_name: str, dry_run: bool = False) -> TrackReport:
-    """對 dev_set/basic/ 內所有任務跑學生 skill,以 bag_equal 比對 gold_sql 結果。"""
-    rep = TrackReport(track="basic", skill=skill_name)
-    tasks = load_basic_tasks()
-    rep.total = len(tasks)
+def bag_equal(rows_a, rows_b) -> bool:
+    """Backward-compatible helper: row order ignored, column order significant."""
+    return Counter(tuple(r) for r in rows_a) == Counter(tuple(r) for r in rows_b)
+
+
+def run_sql(db_path: str, sql: str):
+    return contract.run_sql(str(db_path), sql)
+
+
+def is_read_only_sql(sql: str) -> tuple[bool, str]:
+    text = str(sql or "").strip().rstrip(";").strip()
+    if not text:
+        return False, "empty sql"
+    if ";" in text:
+        return False, "multiple statements"
+    upper = text.upper()
+    if not upper.startswith("SELECT"):
+        return False, "not a SELECT"
+    forbidden = {
+        "INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER", "ATTACH",
+        "DETACH", "REPLACE", "TRUNCATE", "VACUUM", "PRAGMA",
+    }
+    for token in upper.replace("(", " ").replace(")", " ").split():
+        if token in forbidden:
+            return False, f"forbidden keyword: {token}"
+    return True, ""
+
+
+def extract_last_json_block(text):
+    if not isinstance(text, str):
+        return None
+    import re
+    matches = re.findall(r"```json\s*(.*?)\s*```", text, flags=re.IGNORECASE | re.DOTALL)
+    for body in reversed(matches):
+        try:
+            obj = json.loads(body)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            return obj
+    return None
+
+
+def _extract_first_json_object(text: str) -> dict | None:
+    if not isinstance(text, str):
+        return None
+    decoder = json.JSONDecoder()
+    for idx, ch in enumerate(text):
+        if ch != "{":
+            continue
+        try:
+            obj, _ = decoder.raw_decode(text[idx:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            return obj
+    return None
+
+
+def read_result_or_stdout(path: str, stdout_text: str) -> dict | None:
+    obj = contract.read_result(path)
+    if obj is not None:
+        return obj
+    # Local-dev compatibility for stale Hermes skill runners that still print JSON.
+    return extract_last_json_block(stdout_text) or _extract_first_json_object(stdout_text)
+
+
+def load_basic_tasks() -> list[dict]:
+    base = REPO_ROOT / "dev_set" / "basic"
+    tasks = []
+    for path in sorted(base.glob("*.json")):
+        with path.open(encoding="utf-8") as f:
+            task = json.load(f)
+        dbp = task.get("db_path", "")
+        if dbp and not os.path.isabs(dbp) and not dbp.startswith("dev_set/"):
+            task["db_path"] = os.path.join("dev_set", "basic", dbp)
+        tasks.append(task)
+    return tasks
+
+
+def _infer_track(path: str, task: dict) -> str:
+    if task.get("track"):
+        return str(task["track"])
+    parts = set(Path(path).parts)
+    if "pairwise" in parts:
+        return "pairwise"
+    return "basic"
+
+
+def load_tasks(dev_dir: str, track: str | None) -> list[dict]:
+    root = os.path.dirname(os.path.abspath(dev_dir))
+    tasks = []
+    for path in sorted(glob.glob(os.path.join(dev_dir, "**", "*.json"), recursive=True)):
+        if path.endswith("_GROUND_TRUTH.json"):
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                task = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        file_track = _infer_track(path, task)
+        if track and file_track != track:
+            continue
+        task["track"] = file_track
+        task["_source_path"] = path
+        dbp = task.get("db_path", "")
+        if dbp and not os.path.isabs(dbp):
+            task["db_path"] = os.path.join(root, dbp)
+        tasks.append(task)
+    return tasks
+
+
+def load_reference_ground_truth(task_id: str, dev_dir: str) -> dict | None:
+    base = Path(dev_dir) / "pairwise" / "reference_tasks"
+    for path in (base / f"{task_id}_GROUND_TRUTH.json", base / f"{task_id}.json"):
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                return None
+            data.setdefault("bugs", data.get("bugs_in_buggy", []))
+            return data
+    return None
+
+
+def build_skill_input(payload: dict) -> str:
+    drop = {"gold_sql", "db_path", "seed_sql", "track", "_source_path"}
+    return json.dumps({k: v for k, v in payload.items() if k not in drop}, ensure_ascii=False)
+
+
+def invoke_skill(
+    skill: str,
+    payload: dict,
+    result_path: str,
+    model: str | None,
+    debug_dir: Path | None = None,
+    debug_name: str | None = None,
+) -> tuple[int, str, float]:
+    env = dict(os.environ)
+    env["AIASE_RESULT_PATH"] = result_path
+    query = f"/{skill} {build_skill_input(payload)}"
+    cmd = list(HERMES_BASE)
+    if model:
+        cmd += ["-m", model]
+    cmd += ["-q", query]
+    task_id = payload.get("task_id", "<missing>")
+    log_progress(f"invoke start skill={skill} task_id={task_id} result_path={result_path}")
+    t0 = time.time()
+    proc = subprocess.run(cmd, env=env, capture_output=True, text=True, encoding="utf-8")
+    elapsed = time.time() - t0
+    stdout = proc.stdout or ""
+    stderr = proc.stderr or ""
+    outerr = stdout + stderr
+    log_progress(f"invoke done skill={skill} task_id={task_id} returncode={proc.returncode} elapsed={elapsed:.2f}s")
+
+    if debug_dir is not None:
+        safe = debug_name or str(payload.get("task_id", "unknown"))
+        safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in safe)
+        task_debug_dir = debug_dir / safe
+        task_debug_dir.mkdir(parents=True, exist_ok=True)
+
+        (task_debug_dir / "payload.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (task_debug_dir / "query.txt").write_text(query, encoding="utf-8")
+        (task_debug_dir / "cmd.json").write_text(
+            json.dumps(cmd, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (task_debug_dir / "env.txt").write_text(
+            f"AIASE_RESULT_PATH={result_path}\n",
+            encoding="utf-8",
+        )
+        (task_debug_dir / "stdout.log").write_text(stdout, encoding="utf-8")
+        (task_debug_dir / "stderr.log").write_text(stderr, encoding="utf-8")
+        (task_debug_dir / "combined.log").write_text(outerr, encoding="utf-8")
+        (task_debug_dir / "result_path.txt").write_text(str(result_path) + "\n", encoding="utf-8")
+
+        result_exists = os.path.exists(result_path)
+        if result_exists:
+            try:
+                with open(result_path, encoding="utf-8") as f:
+                    result_text = f.read()
+            except OSError as exc:
+                result_text = f"<failed to read result file: {exc}>"
+        else:
+            result_text = "<NO RESULT FILE>"
+
+        (task_debug_dir / "result_file.txt").write_text(result_text, encoding="utf-8")
+        (task_debug_dir / "summary.json").write_text(
+            json.dumps(
+                {
+                    "skill": skill,
+                    "task_id": payload.get("task_id"),
+                    "returncode": proc.returncode,
+                    "elapsed_sec": elapsed,
+                    "result_path": result_path,
+                    "result_exists": result_exists,
+                    "stdout_len": len(stdout),
+                    "stderr_len": len(stderr),
+                    "combined_len": len(outerr),
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+    return proc.returncode, outerr, elapsed
+
+
+def _debug_task_dir(debug_dir: Path | None, debug_name: str) -> str:
+    if debug_dir is None:
+        return ""
+    safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in debug_name)
+    return str(debug_dir / safe)
+
+
+def _failure_extras(rc: int, result_path: str, debug_dir: Path | None, debug_name: str, outerr: str) -> dict[str, Any]:
+    return {
+        "returncode": rc,
+        "result_path": result_path,
+        "result_exists": os.path.exists(result_path),
+        "debug_dir": _debug_task_dir(debug_dir, debug_name),
+        "outerr_tail": outerr[-2000:],
+    }
+
+
+def grade_basic(skill_name: str, dev_dir: str, only_task: str | None, limit: int, model: str | None, debug_dir: Path | None = None) -> TrackReport:
+    report = TrackReport(track="basic", skill=skill_name)
+    tasks = load_tasks(dev_dir, "basic")
+    tasks = [t for t in tasks if "gold_sql" in t and "db_path" in t]
+    if only_task:
+        tasks = [t for t in tasks if t.get("task_id") == only_task]
+    if limit:
+        tasks = tasks[:limit]
+    report.total = len(tasks)
+    log_progress(f"basic start skill={skill_name} tasks={report.total} dev_dir={dev_dir} limit={limit or 'all'}")
     if not tasks:
-        rep.note = "no basic tasks loaded from dev_set/basic/"
-        return rep
+        report.note = "no basic tasks loaded"
+        return report
 
-    slash = f"/{skill_name}"
-    for task in tasks:
+    tmpdir = tempfile.mkdtemp(prefix="aiase_dev_basic_")
+    log_progress(f"basic tempdir={tmpdir}")
+    for idx, task in enumerate(tasks, 1):
         task_id = task.get("task_id", "<missing>")
-        db_path = REPO_ROOT / task.get("db_path", "")
-        gold_sql = task.get("gold_sql", "")
-
-        if dry_run:
-            rep.results.append(TaskResult(task_id, False, reason="dry-run (skill not invoked)"))
-            continue
-
-        if not db_path.exists():
-            rep.results.append(TaskResult(task_id, False, reason=f"db_path missing: {db_path}"))
-            continue
-
-        # 呼叫 skill
+        log_progress(f"basic task {idx}/{len(tasks)} start task_id={task_id}")
+        result_path = os.path.join(tmpdir, f"{task_id}.json")
         payload = {
             "task_id": task_id,
             "question": task.get("question", ""),
             "db_schema": task.get("db_schema", ""),
             "dialect": task.get("dialect", "sqlite"),
         }
-        hr = call_hermes_skill(slash, payload)
-        if not hr.ok:
-            rep.results.append(TaskResult(
-                task_id, False,
-                reason=f"hermes call failed: {hr.error or hr.stderr[:200]}",
-                elapsed_sec=hr.elapsed_sec,
-            ))
-            continue
-
-        obj = extract_last_json_block(hr.stdout)
+        debug_name = f"basic_{task_id}"
+        rc, outerr, elapsed = invoke_skill(skill_name, payload, result_path, model, debug_dir, debug_name)
+        obj = read_result_or_stdout(result_path, outerr)
         if obj is None:
-            rep.results.append(TaskResult(
-                task_id, False, reason="no valid fenced JSON in stdout",
-                elapsed_sec=hr.elapsed_sec,
-            ))
+            report.results.append(TaskResult(task_id, False, "no result file / invalid json", elapsed_sec=elapsed, extras=_failure_extras(rc, result_path, debug_dir, debug_name, outerr)))
+            log_progress(f"basic task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=no-result elapsed={elapsed:.2f}s")
             continue
-
-        if obj.get("task_id") != task_id:
-            rep.results.append(TaskResult(
-                task_id, False,
-                reason=f"task_id mismatch (got {obj.get('task_id')!r})",
-                elapsed_sec=hr.elapsed_sec,
-            ))
+        ok, reason = contract.validate_basic_schema(obj, task_id)
+        if not ok:
+            report.results.append(TaskResult(task_id, False, f"schema invalid: {reason}", elapsed_sec=elapsed, extras=_failure_extras(rc, result_path, debug_dir, debug_name, outerr)))
+            log_progress(f"basic task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=schema-invalid elapsed={elapsed:.2f}s")
             continue
-
         student_sql = obj.get("sql", "")
-        ok_ro, why = is_read_only_sql(student_sql)
-        if not ok_ro:
-            rep.results.append(TaskResult(
-                task_id, False, reason=f"non-read-only SQL: {why}",
-                sql_returned=student_sql, elapsed_sec=hr.elapsed_sec,
-            ))
-            continue
-
-        # 跑兩段 SQL,以 bag_equal 比對
         try:
-            student_rows = run_sql(db_path, student_sql)
-            gold_rows = run_sql(db_path, gold_sql)
-        except sqlite3.Error as e:
-            rep.results.append(TaskResult(
-                task_id, False, reason=f"SQL execution error: {e}",
-                sql_returned=student_sql, elapsed_sec=hr.elapsed_sec,
-            ))
+            got = contract.run_sql(str(task["db_path"]), student_sql)
+            gold = contract.run_sql(str(task["db_path"]), task["gold_sql"])
+        except Exception as exc:
+            report.results.append(TaskResult(task_id, False, f"SQL execution failed: {exc}", student_sql, elapsed))
+            log_progress(f"basic task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=sql-exec elapsed={elapsed:.2f}s")
             continue
-
-        passed = bag_equal(student_rows, gold_rows)
-        rep.results.append(TaskResult(
-            task_id, passed,
-            reason="" if passed else "bag equality failed",
-            sql_returned=student_sql, elapsed_sec=hr.elapsed_sec,
-            extras={"student_rowcount": len(student_rows), "gold_rowcount": len(gold_rows)},
+        passed = contract.bag_equal(got, gold)
+        report.results.append(TaskResult(
+            task_id,
+            passed,
+            "result set matches gold (bag-equal)" if passed else "result set differs from gold",
+            student_sql,
+            elapsed,
+            {"student_rowcount": len(got), "gold_rowcount": len(gold)},
         ))
-
-    rep.passed = sum(1 for r in rep.results if r.passed)
-    return rep
+        log_progress(f"basic task {idx}/{len(tasks)} done task_id={task_id} passed={passed} elapsed={elapsed:.2f}s")
+    report.passed = sum(1 for r in report.results if r.passed)
+    log_progress(f"basic done skill={skill_name} passed={report.passed}/{report.total}")
+    return report
 
 
 def _bug_set_from_obj(obj: dict) -> set[tuple[int, str]]:
-    """把 bug-hunter 輸出的 bugs[] 轉成 (line_start, type) 集合供比對。"""
     out = set()
-    for b in obj.get("bugs", []) or []:
+    for bug in obj.get("bugs", []) or []:
         try:
-            ls = int(b.get("line_start"))
-            t = str(b.get("type", "")).strip()
-            out.add((ls, t))
+            out.add((int(bug.get("line_start")), str(bug.get("type", "")).strip()))
         except (TypeError, ValueError):
             continue
     return out
 
 
-def grade_pairwise(skill_name: str, role: str, dry_run: bool = False) -> TrackReport:
-    """
-    Pairwise 本地評分 — 學生端無 hidden tests,只能對 reference 對手與 ground truth。
-
-    若 role == "code-author":
-        - 對每個 reference task,呼叫學生 author 產 code。
-        - 把 code 餵給 reference-bug-hunter-aggressive (作為一個快速 sanity 對手)。
-        - 同時跑 ground truth 的 test_cases 算 pass rate。
-        - 兩者皆寫入 result,但 pass 判定以 test_cases pass rate 為準(完整通過才 pass)。
-
-    若 role == "bug-hunter":
-        - 對每個 reference task,把 reference-author-buggy 的 code 餵給學生 hunter。
-        - 比對 hunter 的 bugs[] 與 ground-truth bug 位置(以 (line_start, type) 集合的 Jaccard >= 0.5 視為 pass)。
-        - 同時對 reference-author-clean 跑,檢查 false positive(乾淨 code 不應報任何 bug)。
-    """
-    rep = TrackReport(track="pairwise", skill=skill_name, role=role)
-    tasks = load_pairwise_reference_tasks()
-    rep.total = len(tasks)
-    if not tasks:
-        rep.note = "no reference tasks loaded from dev_set/pairwise/reference_tasks/"
-        return rep
-
-    slash = f"/{skill_name}"
-
-    if role == "code-author":
-        for task in tasks:
-            task_id = task["task_id"]
-            if dry_run:
-                rep.results.append(TaskResult(task_id, False, reason="dry-run"))
-                continue
-            payload = {
-                "task_id": task_id,
-                "task_description": task.get("task_description", ""),
-                "constraints": task.get("constraints", {}),
-            }
-            hr = call_hermes_skill(slash, payload)
-            if not hr.ok:
-                rep.results.append(TaskResult(task_id, False, reason=f"hermes failed: {hr.error}"))
-                continue
-            obj = extract_last_json_block(hr.stdout)
-            if obj is None or obj.get("task_id") != task_id or "code" not in obj:
-                rep.results.append(TaskResult(task_id, False, reason="contract violation"))
-                continue
-
-            code = obj.get("code", "")
-            gt = load_reference_ground_truth(task_id) or {}
-            test_cases = gt.get("test_cases", [])
-            passed_cases, failed_cases = _run_code_test_cases(code, task.get("constraints", {}), test_cases)
-
-            all_pass = (failed_cases == 0 and passed_cases == len(test_cases))
-            rep.results.append(TaskResult(
-                task_id, all_pass,
-                reason=("" if all_pass else f"{failed_cases}/{len(test_cases)} hidden-style cases failed"),
-                elapsed_sec=hr.elapsed_sec,
-                extras={"passed_cases": passed_cases, "total_cases": len(test_cases)},
-            ))
-
-    elif role == "bug-hunter":
-        for task in tasks:
-            task_id = task["task_id"]
-            if dry_run:
-                rep.results.append(TaskResult(task_id, False, reason="dry-run"))
-                continue
-            gt = load_reference_ground_truth(task_id) or {}
-            buggy_code = gt.get("buggy_code", "")
-            clean_code = gt.get("clean_code", "")
-            gt_bugs = _bug_set_from_obj({"bugs": gt.get("bugs", [])})
-            if not buggy_code:
-                rep.results.append(TaskResult(task_id, False, reason="no ground-truth buggy_code"))
-                continue
-
-            # 對 buggy code:期待 hunter 抓到
-            payload_b = {
-                "task_id": task_id,
-                "task_description": task.get("task_description", ""),
-                "code": buggy_code,
-            }
-            hr = call_hermes_skill(slash, payload_b)
-            if not hr.ok:
-                rep.results.append(TaskResult(task_id, False, reason=f"hermes failed: {hr.error}"))
-                continue
-            obj = extract_last_json_block(hr.stdout)
-            if obj is None or obj.get("task_id") != task_id:
-                rep.results.append(TaskResult(task_id, False, reason="contract violation"))
-                continue
-
-            student_bugs = _bug_set_from_obj(obj)
-            # Jaccard
-            inter = len(student_bugs & gt_bugs)
-            union = len(student_bugs | gt_bugs) or 1
-            recall_like = inter / max(1, len(gt_bugs))
-            # 也對 clean 跑一輪,加分項:應無誤報
-            clean_fp = 0
-            if clean_code:
-                payload_c = dict(payload_b); payload_c["code"] = clean_code
-                hr_c = call_hermes_skill(slash, payload_c)
-                if hr_c.ok:
-                    objc = extract_last_json_block(hr_c.stdout) or {}
-                    if objc.get("verdict") == "buggy" or len(objc.get("bugs", []) or []) > 0:
-                        clean_fp = 1
-
-            passed = (recall_like >= 0.5 and clean_fp == 0)
-            rep.results.append(TaskResult(
-                task_id, passed,
-                reason=("" if passed else f"recall={recall_like:.2f}, clean_fp={clean_fp}"),
-                elapsed_sec=hr.elapsed_sec,
-                extras={
-                    "jaccard": inter / union,
-                    "recall_like": recall_like,
-                    "clean_fp": clean_fp,
-                },
-            ))
-    else:
-        rep.note = f"unknown role: {role}"
-        return rep
-
-    rep.passed = sum(1 for r in rep.results if r.passed)
-    return rep
-
-
 def _run_code_test_cases(code: str, constraints: dict, test_cases: list[dict]) -> tuple[int, int]:
-    """
-    在一個簡易 namespace 中 exec student code,呼叫 entry_function,以 test_cases 比對。
-    test_cases: [{"input": [...], "expected": ...}, ...]
-    回傳 (passed_count, failed_count)。任何 exception 都計為 failure。
-    """
     entry = constraints.get("entry_function", "")
     if not entry or not code:
         return 0, len(test_cases)
-
-    ns: dict = {}
+    ns: dict[str, Any] = {}
     try:
         exec(compile(code, "<student_code>", "exec"), ns)
     except Exception:
         return 0, len(test_cases)
-
     fn = ns.get(entry)
     if not callable(fn):
         return 0, len(test_cases)
-
     passed = 0
-    for tc in test_cases:
-        args = tc.get("input", [])
-        expected = tc.get("expected")
+    for case in test_cases:
+        args = case.get("input", [])
+        expected = case.get("expected")
         try:
             got = fn(*args) if isinstance(args, list) else fn(args)
             if got == expected:
@@ -552,9 +405,114 @@ def _run_code_test_cases(code: str, constraints: dict, test_cases: list[dict]) -
     return passed, len(test_cases) - passed
 
 
-# ---------------------------------------------------------------------------
-# 7. CLI
-# ---------------------------------------------------------------------------
+def _pairwise_tasks(dev_dir: str, only_task: str | None, limit: int) -> list[dict]:
+    tasks = load_tasks(dev_dir, "pairwise")
+    tasks = [t for t in tasks if "reference_tasks" in str(t.get("_source_path", ""))]
+    if only_task:
+        tasks = [t for t in tasks if t.get("task_id") == only_task]
+    if limit:
+        tasks = tasks[:limit]
+    return tasks
+
+
+def grade_pairwise(skill_name: str, role: str, dev_dir: str, only_task: str | None, limit: int, model: str | None, debug_dir: Path | None = None) -> TrackReport:
+    report = TrackReport(track="pairwise", skill=skill_name, role=role)
+    tasks = _pairwise_tasks(dev_dir, only_task, limit)
+    report.total = len(tasks)
+    log_progress(f"pairwise start skill={skill_name} role={role} tasks={report.total} dev_dir={dev_dir} limit={limit or 'all'}")
+    if not tasks:
+        report.note = "no pairwise reference tasks loaded"
+        return report
+    tmpdir = tempfile.mkdtemp(prefix="aiase_dev_pairwise_")
+    log_progress(f"pairwise tempdir={tmpdir}")
+
+    if role == "code-author":
+        for idx, task in enumerate(tasks, 1):
+            task_id = task["task_id"]
+            log_progress(f"pairwise code-author task {idx}/{len(tasks)} start task_id={task_id}")
+            result_path = os.path.join(tmpdir, f"{task_id}.json")
+            payload = {
+                "task_id": task_id,
+                "task_description": task.get("task_description", ""),
+                "constraints": task.get("constraints", {}),
+                "samples": task.get("test_cases", [])[:3],
+            }
+            debug_name = f"pairwise_code_author_{task_id}"
+            rc, outerr, elapsed = invoke_skill(skill_name, payload, result_path, model, debug_dir, debug_name)
+            obj = read_result_or_stdout(result_path, outerr)
+            if obj is None or obj.get("task_id") != task_id or "code" not in obj:
+                if not os.path.exists(result_path):
+                    reason = "contract violation: missing result file"
+                elif obj is None:
+                    reason = "contract violation: invalid json"
+                elif obj.get("task_id") != task_id:
+                    reason = "contract violation: task_id mismatch"
+                else:
+                    reason = "contract violation: missing code"
+                report.results.append(TaskResult(task_id, False, reason, elapsed_sec=elapsed, extras=_failure_extras(rc, result_path, debug_dir, debug_name, outerr)))
+                log_progress(f"pairwise code-author task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=contract elapsed={elapsed:.2f}s")
+                continue
+            passed_cases, failed_cases = _run_code_test_cases(obj.get("code", ""), task.get("constraints", {}), task.get("test_cases", []))
+            passed = failed_cases == 0 and passed_cases == len(task.get("test_cases", []))
+            report.results.append(TaskResult(
+                task_id,
+                passed,
+                "" if passed else f"{failed_cases}/{len(task.get('test_cases', []))} hidden-style cases failed",
+                elapsed_sec=elapsed,
+                extras={"passed_cases": passed_cases, "total_cases": len(task.get("test_cases", []))},
+            ))
+            log_progress(f"pairwise code-author task {idx}/{len(tasks)} done task_id={task_id} passed={passed} cases={passed_cases}/{len(task.get('test_cases', []))} elapsed={elapsed:.2f}s")
+    elif role == "bug-hunter":
+        for idx, task in enumerate(tasks, 1):
+            task_id = task["task_id"]
+            log_progress(f"pairwise bug-hunter task {idx}/{len(tasks)} start task_id={task_id}")
+            gt_bugs = _bug_set_from_obj({"bugs": task.get("bugs_in_buggy", task.get("bugs", []))})
+            buggy_code = task.get("buggy_code", "")
+            clean_code = task.get("clean_code", "")
+            if not buggy_code:
+                report.results.append(TaskResult(task_id, False, "no ground-truth buggy_code"))
+                log_progress(f"pairwise bug-hunter task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=no-buggy-code")
+                continue
+
+            result_buggy = os.path.join(tmpdir, f"{task_id}_buggy.json")
+            payload = {"task_id": task_id, "task_description": task.get("task_description", ""), "code": buggy_code}
+            debug_name_buggy = f"pairwise_bug_hunter_{task_id}_buggy"
+            rc_buggy, outerr_buggy, elapsed_buggy = invoke_skill(skill_name, payload, result_buggy, model, debug_dir, debug_name_buggy)
+            obj_buggy = read_result_or_stdout(result_buggy, outerr_buggy)
+            if obj_buggy is None or obj_buggy.get("task_id") != task_id:
+                report.results.append(TaskResult(task_id, False, "contract violation on buggy code", elapsed_sec=elapsed_buggy, extras=_failure_extras(rc_buggy, result_buggy, debug_dir, debug_name_buggy, outerr_buggy)))
+                log_progress(f"pairwise bug-hunter task {idx}/{len(tasks)} done task_id={task_id} passed=False reason=buggy-contract elapsed={elapsed_buggy:.2f}s")
+                continue
+            student_bugs = _bug_set_from_obj(obj_buggy)
+            intersection = len(student_bugs & gt_bugs)
+            union = len(student_bugs | gt_bugs) or 1
+            recall_like = intersection / max(1, len(gt_bugs))
+
+            clean_fp = 0
+            elapsed_clean = 0.0
+            if clean_code:
+                result_clean = os.path.join(tmpdir, f"{task_id}_clean.json")
+                clean_payload = dict(payload)
+                clean_payload["code"] = clean_code
+                debug_name_clean = f"pairwise_bug_hunter_{task_id}_clean"
+                _, outerr_clean, elapsed_clean = invoke_skill(skill_name, clean_payload, result_clean, model, debug_dir, debug_name_clean)
+                obj_clean = read_result_or_stdout(result_clean, outerr_clean) or {}
+                if obj_clean.get("verdict") == "buggy" or obj_clean.get("bugs"):
+                    clean_fp = 1
+            passed = recall_like >= 0.5 and clean_fp == 0
+            report.results.append(TaskResult(
+                task_id,
+                passed,
+                "" if passed else f"recall={recall_like:.2f}, clean_fp={clean_fp}",
+                elapsed_sec=elapsed_buggy + elapsed_clean,
+                extras={"jaccard": intersection / union, "recall_like": recall_like, "clean_fp": clean_fp},
+            ))
+            log_progress(f"pairwise bug-hunter task {idx}/{len(tasks)} done task_id={task_id} passed={passed} recall={recall_like:.2f} clean_fp={clean_fp} elapsed={elapsed_buggy + elapsed_clean:.2f}s")
+    else:
+        report.note = "unknown pairwise role"
+    report.passed = sum(1 for r in report.results if r.passed)
+    log_progress(f"pairwise done skill={skill_name} role={role} passed={report.passed}/{report.total}")
+    return report
 
 
 def _write_report(report: TrackReport) -> Path:
@@ -562,101 +520,81 @@ def _write_report(report: TrackReport) -> Path:
     stamp = time.strftime("%Y%m%d_%H%M%S")
     suffix = f"_{report.role}" if report.role else ""
     out = RESULTS_DIR / f"{report.track}{suffix}_{report.skill}_{stamp}.json"
-    out.write_text(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+    out.write_text(json.dumps(report.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
     return out
 
 
 def _print_summary(report: TrackReport) -> None:
-    print(f"\n=== {report.track.upper()} :: {report.skill} {('('+report.role+')') if report.role else ''} ===")
+    label = f"{report.track.upper()} :: {report.skill}"
+    if report.role:
+        label += f" ({report.role})"
+    print(f"\n=== {label} ===")
     if report.note:
         print(f"  note: {report.note}")
-    print(f"  total: {report.total}  passed: {report.passed}  rate: "
-          f"{(report.passed/report.total*100 if report.total else 0):.1f}%")
-    if report.results:
-        for r in report.results[:50]:
-            mark = "✓" if r.passed else "✗"
-            print(f"   {mark} {r.task_id}  {r.reason}")
-        if len(report.results) > 50:
-            print(f"   ... ({len(report.results)-50} more)")
+    rate = report.passed / report.total * 100 if report.total else 0.0
+    print(f"  total: {report.total}  passed: {report.passed}  rate: {rate:.1f}%")
+    for item in report.results[:50]:
+        mark = "[PASS]" if item.passed else "[FAIL]"
+        print(f"   {mark} {item.task_id}  {item.reason}")
+    if len(report.results) > 50:
+        print(f"   ... ({len(report.results) - 50} more)")
 
 
-def main(argv: Optional[list[str]] = None) -> int:
-    p = argparse.ArgumentParser(description="AIASE 2026 local dev runner")
-    p.add_argument("--skill", required=False, help="skill name (folder name)")
-    p.add_argument("--track", choices=["basic", "pairwise"], required=False)
-    p.add_argument("--role", choices=["code-author", "bug-hunter"], default="",
-                   help="required for --track pairwise")
-    p.add_argument("--dry-run", action="store_true",
-                   help="don't call hermes; just verify loader + structure")
-    p.add_argument("--check-only", action="store_true",
-                   help="check dev_set integrity + helpers, exit 0/1; no skill invocation")
-    args = p.parse_args(argv)
-
-    if args.check_only:
-        return _check_only()
-
-    if not args.skill or not args.track:
-        p.error("--skill and --track are required (or use --check-only)")
-
-    if args.track == "basic":
-        rep = grade_basic(args.skill, dry_run=args.dry_run)
+def run(skill, dev_dir, only_task, track, limit, model, dry_run=False, dry_result_file=None, role="", invoke=invoke_skill, debug_dir: Path | None = None):
+    # Compatibility entry point for older tests; non-dry normal runs use the richer graders.
+    if dry_run:
+        tasks = load_tasks(dev_dir, track)
+        if only_task:
+            tasks = [t for t in tasks if t["task_id"] == only_task]
+        results = []
+        for task in tasks[: limit or None]:
+            obj = contract.read_result(dry_result_file)
+            passed = obj is not None and obj.get("task_id") == task.get("task_id")
+            results.append({"task_id": task.get("task_id"), "passed": passed, "detail": "dry-run result checked"})
+        return {"total": len(results), "passed": sum(1 for r in results if r["passed"]), "results": results}
+    if track == "pairwise":
+        report = grade_pairwise(skill, role or "code-author", dev_dir, only_task, limit, model, debug_dir)
     else:
-        if not args.role:
-            p.error("--role is required when --track pairwise")
-        rep = grade_pairwise(args.skill, args.role, dry_run=args.dry_run)
-
-    _print_summary(rep)
-    if not args.dry_run:
-        out = _write_report(rep)
-        print(f"\nreport written to: {out.relative_to(REPO_ROOT)}")
-    return 0
+        report = grade_basic(skill, dev_dir, only_task, limit, model, debug_dir)
+    _print_summary(report)
+    return report.to_dict()
 
 
-def _check_only() -> int:
-    """Sanity check the dev set + helpers without invoking Hermes."""
-    print("[check] loading basic tasks...")
-    tasks = load_basic_tasks()
-    print(f"  loaded {len(tasks)} basic tasks")
-    bad = 0
-    for t in tasks:
-        tid = t.get("task_id", "?")
-        db = REPO_ROOT / t.get("db_path", "")
-        if not db.exists():
-            print(f"  ✗ {tid}: missing db {db.relative_to(REPO_ROOT)}")
-            bad += 1
-            continue
-        gold = t.get("gold_sql", "")
-        ok, why = is_read_only_sql(gold)
-        if not ok:
-            print(f"  ✗ {tid}: gold_sql not read-only: {why}")
-            bad += 1
-            continue
-        try:
-            rows = run_sql(db, gold)
-        except sqlite3.Error as e:
-            print(f"  ✗ {tid}: gold_sql failed: {e}")
-            bad += 1
-            continue
-        if not bag_equal(rows, rows):
-            print(f"  ✗ {tid}: bag_equal not reflexive!")
-            bad += 1
-            continue
-        print(f"  ✓ {tid}: {len(rows)} rows")
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skill", help="skill name, e.g. text2sql-<GITHUBID>")
+    parser.add_argument("--track", default="basic", choices=["basic", "pairwise"], help="basic | pairwise")
+    parser.add_argument("--role", default="", choices=["", "code-author", "bug-hunter"], help="required when --track pairwise")
+    parser.add_argument("--limit", type=int, default=0, help="only run the first N tasks")
+    parser.add_argument("--task", dest="only_task", default=None)
+    parser.add_argument("--model", default=None, help="override model")
+    parser.add_argument("--dev-dir", default=str(REPO_ROOT / "dev_set"))
+    parser.add_argument("--dry-run", action="store_true", help="do not invoke hermes; validate --result-file")
+    parser.add_argument("--result-file", dest="dry_result_file", default=None)
+    parser.add_argument("--debug", action="store_true", help="write per-task debug logs")
+    parser.add_argument("--debug-dir", default=None, help="directory for debug logs")
+    args = parser.parse_args()
 
-    print(f"\n[check] reference tasks...")
-    refs = load_pairwise_reference_tasks()
-    print(f"  loaded {len(refs)} reference tasks")
-    for r in refs:
-        tid = r.get("task_id", "?")
-        gt = load_reference_ground_truth(tid)
-        if gt is None:
-            print(f"  ! {tid}: no ground-truth (may be intentional for student-facing variant)")
-        else:
-            print(f"  ✓ {tid}: ground-truth has {len(gt.get('bugs', []))} bugs, "
-                  f"{len(gt.get('test_cases', []))} test cases")
+    if not args.dry_run and not args.skill:
+        parser.error("--skill is required unless --dry-run")
+    if args.dry_run and not args.dry_result_file:
+        parser.error("--dry-run requires --result-file")
+    if args.track == "pairwise" and not args.role:
+        parser.error("--role is required when --track pairwise")
 
-    print(f"\n[check] done. {bad} issue(s).")
-    return 0 if bad == 0 else 1
+    debug_dir = make_debug_dir(args.debug, args.debug_dir, args.skill)
+
+    if args.dry_run:
+        summary = run(args.skill or "", args.dev_dir, args.only_task, args.track, args.limit, args.model, True, args.dry_result_file, args.role)
+        return 0 if summary["total"] and summary["passed"] == summary["total"] else 1
+    if args.track == "basic":
+        report = grade_basic(args.skill, args.dev_dir, args.only_task, args.limit, args.model, debug_dir)
+    else:
+        report = grade_pairwise(args.skill, args.role, args.dev_dir, args.only_task, args.limit, args.model, debug_dir)
+    _print_summary(report)
+    out = _write_report(report)
+    print(f"\nreport written to: {out.relative_to(REPO_ROOT)}")
+    return 0 if report.total and report.passed == report.total else 1
 
 
 if __name__ == "__main__":

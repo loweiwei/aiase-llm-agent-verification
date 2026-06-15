@@ -18,6 +18,10 @@ models:
     provider: aiase
     model: gemini-2.5-flash
 
+  - id: gemini-2.5-flash
+    provider: aiase
+    model: gemini-2.5-flash
+
 # 預設模型 — 開發期建議先 gemma4(免費迭代),穩了再切 gemini-2.5-flash 驗跨模型。
 default_model: gemma4
 
@@ -25,4 +29,4 @@ default_model: gemma4
 # 請改成你本機 repo 的 absolute path。
 skills:
   external_dirs:
-    - /ABSOLUTE/PATH/TO/final-project-<github_id>/skills
+    - /home/vivian/Desktop/TAICA_AIASE2026/final/final-project-loweiwei/skills

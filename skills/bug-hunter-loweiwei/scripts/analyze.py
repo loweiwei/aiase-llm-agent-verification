@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""
-bug-hunter analyzer — deterministic edge-input probing.
+"""Legacy debug helper for deterministic edge-input probing.
+
+This script is not used by the official bug-hunter scoring path. The official
+entry point is run.py, which writes the contract JSON to AIASE_RESULT_PATH.
 
 Usage:
     python analyze.py '{
@@ -12,21 +14,21 @@ Usage:
         ]
     }'
 
-Prints a single fenced JSON block:
+Prints a debug JSON object to stdout:
     {"entry_found": bool,
      "ast_lines": {"entry_def": int, "return_lines": [int], "loop_lines": [int]},
      "probes": [{"label": str, "outcome": "ok"|"crash"|"timeout", "error": str}],
      "suspicious_lines": [int],
      "summary": str}
 
-This is the deterministic side of the bug-hunter; the LLM uses it as evidence,
-but still makes the final bug-vs-not-bug judgment.
+Use this only for local debugging; it must not affect formal grading output.
 """
 
 from __future__ import annotations
 
 import ast
 import json
+import re
 import signal
 import sys
 import traceback
@@ -34,14 +36,12 @@ from contextlib import contextmanager
 
 
 def _emit(obj: dict) -> int:
-    sys.stdout.write("```json\n")
-    sys.stdout.write(json.dumps(obj, ensure_ascii=False, indent=2))
-    sys.stdout.write("\n```\n")
+    sys.stdout.write(json.dumps(obj, ensure_ascii=False, indent=2) + "\n")
     return 0
 
 
 def _ast_features(code: str, entry: str) -> dict:
-    out = {"entry_def": -1, "return_lines": [], "loop_lines": []}
+    out = {"entry_def": -1, "return_lines": [], "loop_lines": [], "subscript_lines": [], "division_lines": [], "mutation_lines": []}
     try:
         tree = ast.parse(code)
     except SyntaxError:
@@ -53,9 +53,51 @@ def _ast_features(code: str, entry: str) -> dict:
             out["return_lines"].append(node.lineno)
         if isinstance(node, (ast.For, ast.While)) and node.lineno:
             out["loop_lines"].append(node.lineno)
+        if isinstance(node, ast.Subscript) and node.lineno:
+            out["subscript_lines"].append(node.lineno)
+        if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Div, ast.FloorDiv, ast.Mod)) and node.lineno:
+            out["division_lines"].append(node.lineno)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in {"sort", "append", "extend", "pop", "remove", "clear"} and node.lineno:
+            out["mutation_lines"].append(node.lineno)
     out["return_lines"].sort()
     out["loop_lines"].sort()
+    out["subscript_lines"].sort()
+    out["division_lines"].sort()
+    out["mutation_lines"].sort()
     return out
+
+
+def _infer_entry(task_description: str, code: str) -> str:
+    m = re.search(r"Implement\s+([A-Za-z_]\w*)\s*\(", task_description or "")
+    if m:
+        return m.group(1)
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return ""
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            return node.name
+    return ""
+
+
+def _pattern_findings(code: str, ast_lines: dict) -> list[dict]:
+    findings: list[dict] = []
+    lines = code.splitlines()
+    for i, line in enumerate(lines, 1):
+        compact = line.replace(" ", "")
+        if "[0]" in compact and not any("if not " in prev or "len(" in prev for prev in lines[max(0, i-4):i-1]):
+            findings.append({"line": i, "type": "edge_case", "reason": "index 0 access without a nearby empty-input guard"})
+        if "range(len(" in compact and "-1" in compact:
+            findings.append({"line": i, "type": "off_by_one", "reason": "range(len(x)-1) may skip the last element"})
+        if "/" in line or "%" in line:
+            findings.append({"line": i, "type": "edge_case", "reason": "division/modulo may need zero handling"})
+        if ".sort(" in line:
+            findings.append({"line": i, "type": "logic_error", "reason": "in-place sort mutates caller input"})
+    for line in ast_lines.get("division_lines", []):
+        if not any(f["line"] == line for f in findings):
+            findings.append({"line": line, "type": "edge_case", "reason": "arithmetic division/modulo needs denominator boundary review"})
+    return findings
 
 
 class _Timeout(Exception):
@@ -151,13 +193,15 @@ def main(argv: list[str]) -> int:
         return _emit({"entry_found": False, "ast_lines": {}, "probes": [],
                       "suspicious_lines": [], "summary": f"argv JSON invalid: {e}"})
 
-    code = str(payload.get("code", ""))
-    entry = str(payload.get("entry_function", ""))
+    code = str(payload.get("code", "")).replace("\r\n", "\n")
+    task_description = str(payload.get("task_description", ""))
+    entry = str(payload.get("entry_function", "")) or _infer_entry(task_description, code)
     samples = payload.get("edge_inputs") or _default_battery()
     timeout_sec = float(payload.get("timeout_sec", 1.0))
 
     ast_lines = _ast_features(code, entry)
     entry_found = ast_lines.get("entry_def", -1) > 0
+    pattern_findings = _pattern_findings(code, ast_lines)
 
     probes = []
     suspicious: set[int] = set()
@@ -177,8 +221,10 @@ def main(argv: list[str]) -> int:
 
     return _emit({
         "entry_found": entry_found,
+        "entry_function": entry,
         "ast_lines": ast_lines,
         "probes": probes,
+        "pattern_findings": pattern_findings,
         "suspicious_lines": sorted(suspicious),
         "summary": summary,
     })
