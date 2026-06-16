@@ -338,7 +338,7 @@ def test_mixed_clean_not_overridden_by_deterministic_oracle() -> None:
         "merge_intervals",
         code,
     )
-    obj = _mixed(payload, {"verdict": "clean", "bugs": [], "confidence": 0.7})
+    obj = _mixed(payload, {"verdict": "clean", "bugs": [], "confidence": 0.75})
     _schema(obj)
     _assert(obj["task_id"] == "mixed_clean_not_overridden", "task id preserved")
     _assert(obj["verdict"] == "clean" and obj["bugs"] == [], "mixed clean must not be overridden by legacy oracle")

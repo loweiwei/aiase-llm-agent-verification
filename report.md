@@ -6,7 +6,7 @@
 
 本 repo `final-project-loweiwei` 完成四個必交 skill：`text2sql-loweiwei`、`code-author-loweiwei`、`bug-hunter-loweiwei` 與 Open Track 的 `open-test-killer-loweiwei`。整體策略是讓 Hermes Agent 只負責必要的私下推理與觸發 terminal call，正式輸出一律交給各 skill 的 deterministic `scripts/run.py` 寫入 `AIASE_RESULT_PATH` 指定結果檔；若環境變數不存在，fallback 到目前工作目錄的 `./aiase_result.json`。
 
-file-based update 後，chat/stdout 不再是正式評分來源，因此四個 wrapper 都避免輸出 fenced JSON 到 stdout，並使用 `tempfile.mkstemp` 搭配 `os.replace` 做 atomic write，降低 partial JSON、格式漂移與 Hermes final response 干擾評分的風險。
+file-based update 後，前三個必交 skill 的正式評分來源是 result file；Open Track 則同時支援 result file 與 stdout 最後 fenced JSON block。四個 wrapper 都使用 `tempfile.mkstemp` 搭配 `os.replace` 做 atomic write，降低 partial JSON、格式漂移與 Hermes final response 干擾評分的風險。
 
 ## 2. 整體設計決策
 
@@ -46,33 +46,38 @@ LLM 直接輸出 JSON、SQL 或 Python code 時，常見風險包含 Markdown fe
 
 Open Track skill name、資料夾、slash command 與文件一致：`open-test-killer-loweiwei`、`skills/open-test-killer-loweiwei/`、`/open-test-killer-loweiwei`。`SKILL.md` 要求 terminal tool exactly once，並把完整原始 input JSON 經由 stdin/heredoc 傳給 `scripts/run.py`。payload 可能含大量 `reference_code`、`mutants.code` 與 candidate inputs，因此 stdin 是正式入口；`--payload` 只作 local smoke 相容模式。
 
-`scripts/run.py` 是 deterministic mutation-testing Test Killer。它檢查 required fields，執行 reference implementation 取得 expected output，再用同一 candidate input 執行每個 mutant。reference exception、timeout 或 non-JSON-serializable output 使該 candidate invalid；mutant output mismatch、exception 或 timeout 都視為被該 candidate kill。selection 使用 deterministic greedy：每次選擇帶來最多 new kills 的 candidate，最多選 `max_tests`。結果檔包含 `selected_tests`、每個 selected test 的 `expected` 與 `kills`、`killed_mutants`、`unkilled_mutants`、`kill_rate`、`num_selected_tests`。
+`scripts/run.py` 是 deterministic mutation-testing Test Killer。它檢查 required fields，執行 reference implementation 取得 expected output，再用同一 candidate input 執行每個 mutant。reference exception、timeout 或 non-JSON-serializable output 使該 candidate invalid；mutant output mismatch、exception、non-serializable output 或 timeout 都視為被該 candidate kill。selection 先在安全組合數內做 exact max-coverage search，tie-break 依 kill 數多、test 數少、candidate 原始 index/id 穩定排序；若組合數超過 budget，才使用 deterministic greedy fallback。結果檔與 stdout fenced JSON 都包含 `selected_tests`、每個 selected test 的 `expected` 與 `kills`、`killed_mutants`、`unkilled_mutants`/`survived_mutants`、`kill_rate`、`num_selected_tests`、`max_tests`、`total_mutants`、`verdict`、`confidence`、`rationale` 與 `evaluation_stats`。`verdict` 只有在 `kill_rate >= 0.8` 且 evaluation 沒有 truncated 時才是 `pass`。
+
+安全執行策略：reference 與 mutant 都在獨立 process 中執行，每次 call 有 timeout；candidate namespace 只提供受限 builtins 與 allowlist imports (`math`、`collections`、`itertools`、`functools`、`heapq`、`bisect`、`re`、`string`、`typing`、`operator`)。為支援常見 Python code，sandbox 允許 class definition 所需的 `__build_class__`、`from typing import List/Optional/Dict/Tuple` 與常見純 builtins；但 `open`、`eval`、`exec`、`compile`、`input`、任意 import、`os`、`sys`、`subprocess`、socket/network、file-system 相關能力仍不在 sandbox builtins 或 import allowlist 中。
 
 這個 scenario 是 verifiable，因為 kill set 由實際執行 reference/mutant 得到，不靠 LLM 自稱。演算法不 hardcode task_id、mutant id 或 candidate index，因此能應對 candidate order、mutant order、id rename、whitespace/comment 與 max_tests perturbation。
 
 ## 4. OPEN_TRACK.md 完整性
 
-`OPEN_TRACK.md` 已檢查並包含七個必要標題：Skill 簡介、Skill 名稱與目錄、呼叫方式、自定 Verifiable Scenario、預期失敗模式、互動對象、Token Budget 估算。內容描述了 skill 名稱、目錄、slash command、stdin/heredoc 正式 procedure、input schema、successful/failure output contract、metric/pass condition、hidden perturbation/anti-hardcoding、本地測試方式與 token budget。文件不要求 repo root 當前工作目錄，也不依賴 `REPO_ROOT` 或 `git rev-parse`。
+`OPEN_TRACK.md` 已檢查並包含七個必要標題：Skill 簡介、Skill 名稱與目錄、呼叫方式、自定 Verifiable Scenario、預期失敗模式、互動對象、Token Budget 估算。內容描述了 skill 名稱、目錄、slash command、stdin/heredoc 正式 procedure、input schema、successful/failure output contract、`evaluation_stats`、metric/pass condition、hidden perturbation/anti-hardcoding、本地測試方式與 typical public-like token budget。文件不要求 repo root 當前工作目錄，也不依賴 `REPO_ROOT` 或 `git rev-parse`。
 
 ## 5. 測試與執行 Log 證據
 
 | 測試 | 指令 | 結果 | 重點 log |
 |---|---|---|---|
-| repo verification | `python verify_repo.py --github-id loweiwei` | PASS | `passed: 28/28` |
+| repo verification | `python verify_repo.py --github-id loweiwei` | PASS | current `passed: 27/27`; earlier verifier version log was `passed: 28/28` |
 | Text2SQL baseline | `python run_dev.py --skill text2sql-loweiwei --track basic` | PARTIAL | baseline `total: 21 passed: 20 rate: 95.2%`; only failure `task_nl2sql_016 result set differs`, student rowcount 5 vs gold rowcount 4 |
 | Text2SQL final | `python run_dev.py --skill text2sql-loweiwei --track basic` | PASS | final `total: 21 passed: 21 rate: 100.0%`; `task_nl2sql_016` used nested `NOT EXISTS` and matched gold |
 | Code Author dev | `python run_dev.py --skill code-author-loweiwei --track pairwise --role code-author` | PASS | `total: 5 passed: 5 rate: 100.0%` |
+| Code Author reference regression | `python skills/code-author-loweiwei/scripts/regression.py` | PASS | offline only: generated code passed all 5 reference task case suites; obvious buggy variants failed public/reference cases; `task_pair_002` tricky survived public cases and is logged as hidden-like risk |
+| Pairwise six-reference corpus | `python skills/code-author-loweiwei/scripts/reference_training_corpus.py` | PASS | offline corpus generator uses `reference-author-clean/buggy/tricky` plus `reference-bug-hunter-aggressive/conservative/noisy`; summary `records:5`, `bad_count:0` |
 | Bug Hunter known dev log | `python run_dev.py --skill bug-hunter-loweiwei --track pairwise --role bug-hunter` | PARTIAL | 已知舊 log：`total: 5 passed: 2 rate: 40.0%`; failures show `recall=0.00, clean_fp=0` |
 | Bug Hunter baseline 本次實測 | `python run_dev.py --skill bug-hunter-loweiwei --track pairwise --role bug-hunter` | PARTIAL | 修改前完整 baseline：`total: 5 passed: 3 rate: 60.0%`; failed `task_pair_002 recall=0.00, clean_fp=0`, `task_pair_004 recall=0.00, clean_fp=0`; stdout 只有 summary 與 report path，stderr 空白 |
 | Bug Hunter post-fix | `python run_dev.py --skill bug-hunter-loweiwei --track pairwise --role bug-hunter` | PASS | `total: 5 passed: 5 rate: 100.0%`; all pairwise Bug Hunter cases pass |
+| Bug Hunter reference regression | `python skills/bug-hunter-loweiwei/scripts/regression.py` | PASS | offline only: `clean_false_positives: []`, `buggy_hits: 5/5`, `tricky_hits: 5/5` |
 | Code Author selftest | `python3 skills/code-author-loweiwei/scripts/selftest.py` | PASS | `ok:true passed:45 failed:0` |
 | Bug Hunter selftest | `python3 skills/bug-hunter-loweiwei/scripts/selftest.py` | PASS | `ok:true passed:30 failed:0` |
-| Open Track selftest | `python3 skills/open-test-killer-loweiwei/scripts/selftest.py` | PASS | `ok:true passed:5 failed:0`; public scenarios kill rates include `merge_intervals=1.0`, `valid_parentheses=0.8`, `top_k_frequent=1.0` |
-| Open Track direct smoke | `AIASE_RESULT_PATH=/tmp/open_killer_result.json python3 skills/open-test-killer-loweiwei/scripts/run.py < .../merge_intervals.json` | PASS | result `ok:true`, `task_id:open_test_killer_merge_intervals`, `kill_rate:1.0`, `num_selected_tests:4` |
-| Open Track Hermes smoke | `AIASE_RESULT_PATH=/tmp/open_killer_result.json hermes chat --toolsets skills,terminal --yolo -Q -q '/open-test-killer-loweiwei {...}'` | PASS | result file `ok:true`, `task_id:smoke`, selected `t1`, killed `m1`, `kill_rate:1.0` |
+| Open Track selftest | `python skills/open-test-killer-loweiwei/scripts/selftest.py` | PASS | current `ok:true passed:14 failed:0`; covers docs, 3 public scenarios, perturbations, `--payload`, typing import, class definition, exact-search greedy trap, mutant id rename, verdict threshold, and truncated verdict |
+| Open Track regression | `python skills/open-test-killer-loweiwei/scripts/regression.py` | PASS | current `ok:true passed:14 failed:0`; perturbation kill rates include merge `0.8`, valid parentheses `0.8`, top-k `1.0` |
+| Open Track Hermes smoke | Python subprocess list-argument Hermes call | PASS | result file and stdout fenced JSON both `ok:true`; `task_id:open_smoke_renamed`, renamed mutant killed, `kill_rate:1.0`, `num_selected_tests:1` |
 | Open Track via run_dev | `python run_dev.py --help` | N/A | current `run_dev.py` choices only `{basic,pairwise}`; Open Track 用 selftest/direct smoke 驗證 |
 
-補充：Hermes smoke 測試中 chat 仍會顯示 JSON 或自然語言，但正式 result file 正確。file-based grader 讀 `AIASE_RESULT_PATH`，不是 chat/stdout；`run.py` 本身 stdout 保持空白。
+補充：前三個必交 skill 仍採 file-based output 為正式來源；Open Track 依共通輸出契約同步輸出最後 fenced JSON block，並驗證 stdout JSON 與 `AIASE_RESULT_PATH` result file 完全一致。
 
 ## 6. 實際遭遇的失敗與分析
 
@@ -96,6 +101,16 @@ Open Track skill name、資料夾、slash command 與文件一致：`open-test-k
 
 與 verifiability 的關係：SQL 正確性必須由實際 DB 執行與 bag equality 驗證；格式與安全檢查只能保證 contract，不足以保證語意正確。這次修正是語意泛化規則，而不是背 public SQL。
 
+### 6.2.1 Code Author reference-based regression
+
+現象：本輪針對 `code-author-loweiwei` 先跑 baseline，`python run_dev.py --skill code-author-loweiwei --track pairwise --role code-author` 已是 `total: 5 passed: 5 rate: 100.0%`，`verify_repo.py --github-id loweiwei` 為 `passed: 27/27`。因正式 dev 已全 pass，沒有做會改變已通過行為的激進 runtime 改動。
+
+修正方式：新增 `skills/code-author-loweiwei/scripts/reference_training_corpus.py` 作為六個 reference skill 的離線資料產生器。它用 `sys.executable` 與 subprocess list argument 呼叫 `reference-author-clean`、`reference-author-buggy`、`reference-author-tricky` 產生 clean/buggy/tricky code variants，再用 `reference-bug-hunter-aggressive`、`reference-bug-hunter-conservative`、`reference-bug-hunter-noisy` 審查每個 variant，形成可重現 corpus。接著 `skills/code-author-loweiwei/scripts/regression.py` 讀這個 corpus 的品質摘要，並用 reference-author-clean/buggy/tricky 的角色概念校準 Code Author：生成的 code 必須通過 task-provided `test_cases`，不得有 forbidden import 或 sandbox violation；明顯 buggy variant 應該被同一組 cases 擋下；tricky variant 若通過 public/reference cases，不視為 Code Author 失敗，而記錄成 hidden-like 風險，提醒後續補 probes 或更強 self-test。
+
+本次 regression 結果：six-reference corpus summary 為 `records:5`、`bad_count:0`；Code Author regression 為 `ok:true`、`reference_corpus_records:5`、`reference_corpus_bad_outputs:0`、`tasks:5`、`failures:[]`。五個 reference tasks 的 Code Author output 都通過各自 test cases；obvious buggy variants 都會 fail；`task_pair_002` 的 tricky binary-search variant 會通過 public/reference cases，因此 regression 明確記錄 `tricky_survived_public_cases:true`，避免誤把 public cases 當完整規格驗證。
+
+為什麼不是背答案：這些 helpers 不被正式 `run.py` import，也不在 Hermes runtime 讀 reference-author、reference-bug-hunter 或 dev_set ground truth。正式 Code Author 仍只根據 payload 的 `task_description`、`constraints`、samples/test_cases、candidate code validation 與 deterministic templates 決策。reference skills 只作離線資料產生與校準，沒有 task_id answer table、case-name branch、固定 dev 順序或完整 code 字串 hardcoding。
+
 ### 6.3 Bug Hunter conservative normalizer 漏報
 
 現象：已知舊 Bug Hunter pairwise dev log 為 `2/5`、`rate: 40.0%`，失敗重點是 `recall=0.00, clean_fp=0`。本次修改前依規定先跑完整 baseline，實測為 `total: 5 passed: 3 rate: 60.0%`，失敗案例是 `task_pair_002 recall=0.00, clean_fp=0` 與 `task_pair_004 recall=0.00, clean_fp=0`。兩份 log 的共同訊號一致：clean code 沒有誤報，但 buggy/tricky code 沒被抓到或 line/type 沒對齊，問題核心是 recall，不是 precision 或 clean false positive。
@@ -108,15 +123,19 @@ Open Track skill name、資料夾、slash command 與文件一致：`open-test-k
 
 為什麼不是背答案：修正沒有使用 `task_id`、固定 dev case 名稱、固定 task 順序、完整 `task_description` 字串、完整 code 字串或 line number table。觸發條件來自泛化訊號：candidate confidence、task_description/constraints 中的 binary search 語意、code 中的 `while lo < hi` 邊界型態、dynamic probe 與 deterministic oracle mismatch、AST line locator。這些規則可應對 hidden perturbations，例如 task_id 改名、case order 改變、同題型不同函式名稱或等價 code layout。
 
-與 verifiability 的關係：Pairwise Bug Hunter 需要在 recall 與 false positive 間平衡。本次修正只在有具體 oracle/probe evidence 時補強，且保留 high-confidence clean 不覆寫，避免為了 recall 犧牲 clean code precision。最終 `Bug Hunter selftest` 仍為 `ok:true passed:30 failed:0`，`verify_repo.py --github-id loweiwei` 仍為 `passed: 28/28`。
+與 verifiability 的關係：Pairwise Bug Hunter 需要在 recall 與 false positive 間平衡。本次修正只在有具體 oracle/probe evidence 時補強，且保留 high-confidence clean 不覆寫，避免為了 recall 犧牲 clean code precision。最終 `Bug Hunter selftest` 仍為 `ok:true passed:30 failed:0`，current `verify_repo.py --github-id loweiwei` 為 `passed: 27/27`。
+
+後續 reference-based 優化：新增 `skills/bug-hunter-loweiwei/scripts/regression.py` 作為離線 regression helper，並讓它載入 six-reference corpus，確認三個 reference-author variants 與三個 reference-bug-hunter reports 都可產生。這個 helper 只在本地測試時使用 corpus 和 `dev_set/pairwise/reference_tasks` 中的校準 metadata，用來檢查 analyzer 是否維持 clean FP 為 0、buggy reference line/type overlap recall、以及 tricky reference 至少被偵測；正式 `run.py` 不 import 它，也不讀 reference skill 或 dev_set ground truth。初跑 regression 顯示 clean FP 為 0，但 buggy 只命中 4/5、tricky exact match 為 0/5；分析後發現主要是 line/type normalization 與 regression 判定太嚴，而不是完全沒偵測。採用的泛化修正包含：merge intervals locator 改為找含 `merged` 與 current interval 的比較條件；binary search locator 區分 inclusive high bound 與 `hi = len(...)` exclusive-bound + `hi = mid - 1` 混用；kth-smallest locator 將 `set(nums)` dedup 指到實際 dedup line；merge touching mismatch 依 equality-boundary probe 正規化為 `off_by_one`；CSV parser sanitizer 過濾 `continue` 後仍執行 loop-bottom increment 的不可能 claim；DP recurrence report 若 line range 過寬，會用 deterministic audit 的 single-line evidence 精修到 recurrence assignment line。更新後 offline regression 為 `reference_corpus_records:5`、`reference_corpus_bad_outputs:0`、`clean_false_positives: []`、`buggy_hits: 5/5`、`tricky_hits: 5/5`，完整 Bug Hunter dev 為 `total: 5 passed: 5 rate: 100.0%`，repo verification current log 為 `passed: 27/27`。
+
+這個 regression 不是正式答案來源：它沒有被 Hermes skill procedure 呼叫，沒有在 runtime 讀 reference-author 或 reference-bug-hunter，也沒有在 `run.py` 依 task_id、case name、完整 code、完整 task_description 或固定 line table 回報。reference files 僅用來離線觀察 clean/buggy/tricky 行為，正式 analyzer 仍只根據 payload 的 task description、constraints、function name、candidate code、AST、dynamic probes 與 deterministic oracle evidence 判斷。
 
 ### 6.4 stdout/chat output 與 file-based output 混淆
 
-現象：Hermes smoke 測試中，chat 畫面仍顯示 result JSON 或成功訊息；但 `/tmp/open_killer_result.json` 正確寫入 `ok:true`、`kill_rate:1.0`。
+現象：Hermes smoke 測試中，chat 畫面仍可能顯示 terminal stdout 或成功訊息；但 result file 正確寫入 `ok:true`、`kill_rate:1.0`。
 
 根本原因：Hermes final response 行為不完全受 skill prompt 控制。若舊版評分器依賴 stdout/chat，這會造成 contract 風險。
 
-修正方式：四個 `SKILL.md` 都加強 terminal exactly once 與不要在 chat 輸出 JSON；更重要的是 `run.py` 全部採 file-based output，stdout 保持空白。
+修正方式：前三個必交 skill 的 `SKILL.md` 都加強 terminal exactly once 與不要在 chat/stdout 輸出正式 JSON；Open Track 則改為 result file primary、terminal stdout fenced JSON secondary，且 `SKILL.md` 明確要求 assistant 不可手寫 JSON，只有 `scripts/run.py` 可以輸出 stdout fenced JSON，terminal call 後 assistant 必須停止。
 
 與 verifiability 的關係：file-based output 將可驗證 contract 與 Agent 對話文字分離，避免 Markdown/natural-language 影響評分。
 
@@ -126,7 +145,7 @@ Open Track skill name、資料夾、slash command 與文件一致：`open-test-k
 
 根本原因：若 Open Track 只做字串比對或 public scenario hardcode，無法證明真正的 mutation-testing 能力。
 
-修正方式：`run.py` 建立 reference/mutant execution matrix，直接計算每個 candidate 的 kill set，再用 deterministic greedy selection 選測資，不讀 fixed public id。
+修正方式：`run.py` 建立 reference/mutant execution matrix，直接計算每個 candidate 的 kill set，再用 exact max-coverage search 或 deterministic greedy fallback 選測資，不讀 fixed public id。後續優化補強了 stdout fenced JSON / result-file 雙輸出、失敗也合法 JSON、restricted builtins/import sandbox、typing/class support、`survived_mutants` alias、`max_tests`/`total_mutants`/`verdict`/`confidence`/`rationale`/`evaluation_stats` 欄位，以及 public scenarios 的 perturbation regression。perturbation 包含 task_id 改名、mutants 順序改變、candidate_inputs 順序改變、加入無關 candidate input、mutant id 改名與 max_tests 變小；所有 kills 都重新執行 reference/mutants 計算，不使用固定 selected_tests。
 
 與 verifiability 的關係：kill set 由執行結果得出，因此 staff 可以重跑 evaluator 驗證 selected tests、expected output、kills 與 kill_rate。
 
@@ -136,7 +155,7 @@ Open Track skill name、資料夾、slash command 與文件一致：`open-test-k
 - Text2SQL：建立更多 hidden-like SQL dev set，特別是 universal quantification、UNION、nested aggregation、ambiguous names、join path 變形。
 - Code Author：增加更多 deterministic templates 與 AST-based checks，並讓 self-test error 更細緻標示 syntax、runtime、sample mismatch、sandbox violation。
 - Bug Hunter：建立更多 clean/buggy/tricky/noisy regression set，加入 line-number 自動校驗、更多題型 oracle、confidence calibration、dynamic probe timeout/安全隔離與 hidden-like perturbation 測試，持續提升 recall 同時維持 clean_fp 低。
-- Open Track：改善 greedy tie-breaker，加入 pairwise/coverage-aware selection，對等價 mutants 與 invalid candidates 提供更完整 diagnostics。
+- Open Track：持續改善大矩陣效能與 diagnostics，特別是當 exact search budget 超過、evaluation truncated、或存在等價 mutants/invalid candidates 時提供更細緻原因。
 - 測試流程：整合 `verify_repo.py`、`run_dev.py`、各 skill selftest、Open Track public scenarios 成一鍵 regression script，並固定輸出 logs 到 `logs/` 以便 report 引用。
 
 ## 8. 分工說明

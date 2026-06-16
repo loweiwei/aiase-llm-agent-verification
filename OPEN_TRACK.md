@@ -1,6 +1,6 @@
 ## 1. Skill 簡介
 
-`open-test-killer-loweiwei` 是一個 deterministic mutation-testing Test Killer。它會執行 reference implementation 與 mutants，從候選輸入中選出能殺死最多 mutants 的精簡測試集合，將結果 JSON 寫入 `AIASE_RESULT_PATH` 指定的結果檔；若未設定則寫入 `./aiase_result.json`，不依賴網路或 LLM 判斷 kill 結果。
+`open-test-killer-loweiwei` 是一個 deterministic mutation-testing Test Killer。它會執行 reference implementation 與 mutants，在安全 evaluation budget 內從候選輸入中選出最大 mutation coverage 的精簡測試集合；若輸入規模超過 exact search 預算，則使用 deterministic greedy best-effort fallback。結果 JSON 會 atomic write 到 `AIASE_RESULT_PATH` 指定的結果檔；若未設定則寫入 `./aiase_result.json`。同一份 JSON 也會作為最後一段 fenced JSON block 輸出到 stdout，方便符合共通輸出契約。不依賴網路、外部 API 或 LLM 判斷 kill 結果。
 
 ## 2. Skill 名稱與目錄
 
@@ -14,7 +14,7 @@ Slash command: `/open-test-killer-loweiwei`
 
 ## 3. 呼叫方式
 
-Hermes 呼叫方式。Hermes chat 只負責觸發 skill；正式結果以 `AIASE_RESULT_PATH` 指向的 JSON 檔為準，chat stdout 不作為評分依據。
+Hermes 呼叫方式。Hermes chat 只負責觸發 skill；`scripts/run.py` 會同時寫 result file 並輸出最後 fenced JSON block。評分器可讀 `AIASE_RESULT_PATH`，也可解析 stdout 的最後 fenced JSON block。
 
 In grading, the evaluator is expected to set `AIASE_RESULT_PATH`; the skill writes the result JSON there. If unset, `run.py` falls back to `./aiase_result.json`.
 
@@ -26,31 +26,18 @@ python3 <skill_dir>/scripts/run.py <<'AIASETESTKILLERJSON'
 AIASETESTKILLERJSON
 ```
 
-因為 Open Track payload 可能包含大量 Python 原始碼、換行與引號，stdin/heredoc 是正式入口；`run.py --payload '<json>'` 僅作為本地 smoke test 相容模式。
+因為 Open Track payload 可能包含大量 Python 原始碼、換行與引號，stdin 是正式入口；`run.py --payload '<json>'` 僅作為本地 smoke test 相容模式。
 
-```bash
-rm -f /tmp/open_killer_result.json
-AIASE_RESULT_PATH=/tmp/open_killer_result.json hermes chat --toolsets skills,terminal --yolo -Q -q "$(cat <<'AIASEQUERY'
-/open-test-killer-loweiwei {"task_id":"smoke","entry_point":"f","max_tests":1,"description":"optional string metadata","reference_code":"def f(x):\n    return x\n","mutants":[{"id":"m1","code":"def f(x):\n    return x+1\n"}],"candidate_inputs":[{"id":"t1","args":[1],"kwargs":{}}]}
-AIASEQUERY
-)"
-cat /tmp/open_killer_result.json
+本地可直接執行三個 public scenarios；`scripts/selftest.py` 會使用 Python 標準函式庫讀取 scenario JSON、設定暫存 `AIASE_RESULT_PATH`、呼叫 `run.py`，並驗證 result file 與 stdout fenced JSON 一致：
+
+```text
+python skills/open-test-killer-loweiwei/scripts/selftest.py
 ```
 
-本地可直接執行三個 public scenarios。`run.py` 不使用 stdout 作為正式輸出，請讀取結果檔：
+`scripts/regression.py` 是同一 evaluator 的離線 regression 入口，用於 public scenarios 與 perturbation checks：
 
-```bash
-rm -f /tmp/open_killer_result.json
-AIASE_RESULT_PATH=/tmp/open_killer_result.json python skills/open-test-killer-loweiwei/scripts/run.py < skills/open-test-killer-loweiwei/scripts/public_scenarios/merge_intervals.json
-cat /tmp/open_killer_result.json
-
-rm -f /tmp/open_killer_result.json
-AIASE_RESULT_PATH=/tmp/open_killer_result.json python skills/open-test-killer-loweiwei/scripts/run.py < skills/open-test-killer-loweiwei/scripts/public_scenarios/valid_parentheses.json
-cat /tmp/open_killer_result.json
-
-rm -f /tmp/open_killer_result.json
-AIASE_RESULT_PATH=/tmp/open_killer_result.json python skills/open-test-killer-loweiwei/scripts/run.py < skills/open-test-killer-loweiwei/scripts/public_scenarios/top_k_frequent.json
-cat /tmp/open_killer_result.json
+```text
+python skills/open-test-killer-loweiwei/scripts/regression.py
 ```
 
 輸入 schema：
@@ -59,7 +46,7 @@ cat /tmp/open_killer_result.json
 {
   "task_id": "non-empty string",
   "entry_point": "non-empty string",
-  "max_tests": "integer >= 0",
+  "max_tests": 3,
   "description": "optional string metadata",
   "reference_code": "non-empty Python source string",
   "mutants": [{"id": "unique string", "code": "Python source string"}],
@@ -67,7 +54,7 @@ cat /tmp/open_killer_result.json
 }
 ```
 
-`mutants` must be a non-empty array. `candidate_inputs` must be a non-empty array. `description` is optional metadata and is not required by `run.py`.
+`max_tests` must be an integer `>= 0`. `mutants` must be a non-empty array. `candidate_inputs` must be a non-empty array. `description` is optional metadata and is not required by `run.py`.
 
 成功結果檔 JSON schema：
 
@@ -88,25 +75,56 @@ cat /tmp/open_killer_result.json
   "killed_mutants": ["..."],
   "unkilled_mutants": ["..."],
   "kill_rate": 1.0,
-  "num_selected_tests": 1
+  "num_selected_tests": 1,
+  "max_tests": 3,
+  "total_mutants": 3,
+  "survived_mutants": ["..."],
+  "verdict": "pass",
+  "confidence": 1.0,
+  "rationale": "Deterministic exact max-coverage over execution-derived kill sets.",
+  "evaluation_stats": {
+    "evaluation_truncated": false,
+    "evaluated_candidates": 10,
+    "evaluated_calls": 40,
+    "selection_strategy": "exact",
+    "exact_combinations_considered": 175,
+    "exact_combination_budget": 25000
+  }
 }
 ```
+
+This implementation always emits `evaluation_stats` for successful runs. It includes at least `evaluation_truncated`, `selection_strategy`, `exact_combinations_considered`, and `exact_combination_budget`; it also includes evaluation counters such as `evaluated_candidates` and `evaluated_calls`. `selection_strategy` is `exact` when the candidate combinations fit the safety budget, otherwise `greedy_fallback`. If `evaluation_truncated` is true, the output is still legal JSON but the selection is best-effort and `verdict` must be `fail`.
 
 失敗結果檔 JSON schema：
 
 ```json
 {
   "ok": false,
+  "task_id": "...",
+  "entry_point": "...",
+  "selected_tests": [],
+  "killed_mutants": [],
+  "unkilled_mutants": [],
+  "survived_mutants": [],
+  "kill_rate": 0.0,
+  "num_selected_tests": 0,
+  "max_tests": 3,
+  "total_mutants": 3,
+  "verdict": "fail",
+  "confidence": 1.0,
+  "rationale": "invalid or unevaluable payload",
   "error_type": "invalid_input_schema",
   "message": "..."
 }
 ```
 
-`error_type` may also be `invalid_json`, `no_mutants`, `no_candidates`, `reference_execution_error`, or `internal_error`.
+Failure output remains a legal JSON object and includes common fields when available: `task_id`, `entry_point`, `selected_tests`, `killed_mutants`, `unkilled_mutants`, `survived_mutants`, `kill_rate`, `num_selected_tests`, `max_tests`, `total_mutants`, `verdict`, `confidence`, and `rationale`. `error_type` may also be `invalid_json`, `no_mutants`, `no_candidates`, `reference_execution_error`, or `internal_error`.
 
 ## 4. 自定 Verifiable Scenario
 
 此 Open Track 的 verifiable scenario 是 mutation testing test selection。輸入包含一個 Python coding task package：`task_id`、`entry_point`、optional `description`、`reference_code`、多個 mutant implementations、`candidate_inputs` 與 `max_tests`。Ground truth 不是由 LLM 判斷，而是由 evaluator 實際執行每個 candidate input 在 reference 與 mutant 上的結果。
+
+Selection uses exact max-coverage search when the number of candidate combinations is within a fixed safety budget; otherwise it falls back to deterministic greedy best-effort selection. Both modes use only execution-derived kill sets and never use public scenario IDs, candidate IDs, mutant IDs, code strings, or descriptions as answer keys.
 
 一個 selected test 殺死 mutant 的定義如下：
 
@@ -118,6 +136,7 @@ cat /tmp/open_killer_result.json
 Metric：`scenario_pass` 為 true iff：
 
 - output 是合法 JSON。
+- stdout 的最後一段 fenced JSON block 與 result file JSON 一致。
 - required fields 都存在。
 - `ok` 必須為 `true`。
 - 每個 selected test 都來自 `candidate_inputs`。
@@ -127,6 +146,8 @@ Metric：`scenario_pass` 為 true iff：
 - `unkilled_mutants` 必須等於輸入 mutants 扣除 `killed_mutants`。
 - `kill_rate == len(killed_mutants) / len(mutants)`。
 - `kill_rate >= 0.8`。
+- `verdict` must be `"pass"`。
+- `verdict == "pass"` iff `kill_rate >= 0.8` and `evaluation_stats.evaluation_truncated` is false。
 - `num_selected_tests == len(selected_tests)`。
 - `num_selected_tests <= max_tests`。
 
@@ -143,6 +164,8 @@ Staff perturbations 仍應視為同一能力：
 - added irrelevant candidates。
 - adjusted max_tests。
 
+The selection is robust to these perturbations because every kill set is recomputed from the submitted `reference_code`, `mutants`, and `candidate_inputs`; `task_id`, candidate order, mutant order, mutant id names, comments, and whitespace are not used as answer keys.
+
 Staff may add distractor or equivalent-looking mutants only when the private scenario remains solvable to `kill_rate >= 0.8`.
 
 Anti-hardcoding：fixed `task_id`、fixed candidate index、fixed mutant id、fixed string matching、以及 public-scenario hardcoding 都會失敗，因為 evaluator 會用 execution 重新計算 expected outputs 與 kill sets。
@@ -155,8 +178,9 @@ Anti-hardcoding：fixed `task_id`、fixed candidate index、fixed mutant id、fi
 - empty candidates：觸發條件是 `candidate_inputs` 為空陣列。處理方式是輸出 `ok=false`、`error_type=no_candidates`。
 - reference timeout：觸發條件是 reference implementation 在某 candidate input 上無限迴圈或超過 timeout。處理方式是該 candidate input 無效，不列入 selected tests；若所有 candidates 都無效，輸出 `reference_execution_error`。
 - mutant timeout：觸發條件是 mutant implementation 在某 candidate input 上超時。處理方式是該 candidate 殺死該 mutant，因為 mutant 未能在限制內產生正確輸出。
-- no candidate can kill enough mutants：觸發條件是 candidate set 太弱或 mutants 與 reference 等價，導致 greedy selection 的 `kill_rate < 0.8`。處理方式是仍輸出最好的 deterministic selection，metric 會判定該 scenario 未通過。
+- no candidate can kill enough mutants：觸發條件是 candidate set 太弱或 mutants 與 reference 等價，導致 exact search 或 deterministic greedy fallback 的 `kill_rate < 0.8`。處理方式是仍輸出最好的 deterministic selection，`verdict=fail`，metric 會判定該 scenario 未通過。
 - non-JSON-serializable reference output：觸發條件是 reference 回傳 set、object 或其他無法穩定 JSON serialize 的值。處理方式是該 candidate input 無效，不可被選取。
+- evaluation truncated：觸發條件是候選/mutant 組合太大而超過 `MAX_EVAL_CALLS` 或 global deadline。處理方式是輸出已完成矩陣上的 best-effort selection、保留 `ok=true` 與合法 schema、設定 `evaluation_stats.evaluation_truncated=true`，並讓 `verdict=fail`、`rationale` 明確標示 truncated。
 
 ## 6. 互動對象
 
@@ -164,4 +188,4 @@ Anti-hardcoding：fixed `task_id`、fixed candidate index、fixed mutant id、fi
 
 ## 7. Token Budget 估算
 
-單一 scenario 的輸入預估約 3k 到 8k tokens，包含 reference code、mutant code 與候選 inputs。輸出預估約 1k 到 3k tokens，包含 selected tests、expected outputs 與 kill lists。總計約 5k 到 13k tokens per scenario，低於 50k tokens/scenario。
+Typical public-like scenario 的輸入預估約 3k 到 8k tokens，包含 reference code、mutant code 與候選 inputs。輸出預估約 1k 到 3k tokens，包含 selected tests、expected outputs、kill lists 與 `evaluation_stats`。總計約 5k 到 13k tokens per typical scenario，低於 50k tokens/scenario。Hidden scenarios 若包含更多 mutants、candidate inputs 或較長 source code，token usage 可能高於此估算；此時 runner 仍以 `AIASE_RESULT_PATH` result file 與 stdout fenced JSON 輸出合法 JSON，selection 也會依 exact search budget 或 greedy best-effort fallback 決定。

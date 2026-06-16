@@ -987,9 +987,25 @@ def _locate_line(task_kind: str, failure: dict, lines: list[str], tree: ast.AST 
                         text = ast.unparse(node.test).lower()
                     except Exception:
                         text = ""
-                    if "start" in text and "merged" in text:
+                    if "merged" in text and any(token in text for token in ("start", "cur", "interval", "[0]")):
                         return _node_span(node)
         if task_kind in {"binary_search", "search_insert"}:
+            uses_exclusive_hi = False
+            has_strict_loop = False
+            for line in lines:
+                compact = line.replace(" ", "")
+                if compact.startswith("while") and "lo<hi" in compact:
+                    has_strict_loop = True
+                if re.search(r"(?:^|,)hi=len\([^)]*\)$", compact):
+                    uses_exclusive_hi = True
+            if uses_exclusive_hi:
+                for node in locator.nodes:
+                    try:
+                        text = ast.unparse(node).replace(" ", "")
+                    except Exception:
+                        text = ""
+                    if has_strict_loop and isinstance(node, (ast.Assign, ast.AugAssign)) and "hi=mid-1" in text:
+                        return _node_span(node)
             node = locator.first((ast.While,))
             if node is not None:
                 line, _ = _node_span(node)
@@ -1008,6 +1024,8 @@ def _locate_line(task_kind: str, failure: dict, lines: list[str], tree: ast.AST 
                     text = ast.unparse(node).replace(" ", "")
                 except Exception:
                     text = ""
+                if "set(" in text:
+                    return _node_span(node)
                 if "sorted(" in text and "[k]" in text:
                     return _node_span(node)
         if task_kind in hints:
@@ -1033,6 +1051,11 @@ def _classify_failure(kind: str, status: str, exc: BaseException | None, probe: 
         return "logic_error", "medium" if boundary else "high", 0.82 if kind == "generic" else 0.90
     if kind == "known" and probe.label in {"search_insert", "binary_search", "kth_smallest"}:
         return "off_by_one", "medium", 0.88
+    if kind == "known" and probe.label == "merge_intervals" and status == "mismatch":
+        intervals = probe.args[0] if probe.args else []
+        touches = any(a[1] == b[0] or b[1] == a[0] for a in intervals for b in intervals if a is not b)
+        if touches:
+            return "off_by_one", "high", 0.88
     if kind == "known" and probe.label == "unique_paths":
         return "logic_error", "high", 0.88
     boundary = any(arg in ([], "", 0) or arg == [0] or arg == [1] for arg in probe.args)
@@ -1239,6 +1262,10 @@ def _looks_impossible_continue_claim(text: str) -> bool:
             "bottom of the loop also executes",
             "incremented by 1 at the end of the loop",
             "incremented by 1 at end of the loop",
+            "total increment of 3 instead of 2",
+            "increment of 3 instead of 2",
+            "advancing by 3",
+            "advances 3 total",
             "final i += 1",
             "double-increment",
             "double increment",
@@ -1311,6 +1338,18 @@ def _binary_search_boundary_hint(payload: dict, code: str, bug_text: str) -> tup
     return None
 
 
+def _dp_recurrence_hint(code: str, bug_text: str) -> tuple[int, int, str | None] | None:
+    text = str(bug_text or "").lower().replace(" ", "")
+    if "dp[i][j]" not in text and "recurrence" not in text:
+        return None
+    lines = code.splitlines() or [""]
+    for idx, line in enumerate(lines, start=1):
+        compact = line.replace(" ", "")
+        if "dp[i][j]" in compact and "=" in compact:
+            return idx, idx, "logic_error"
+    return None
+
+
 def _sanitize_bug(bug: Any, payload: dict, code_line_count: int) -> dict | None:
     if not isinstance(bug, dict):
         return None
@@ -1345,6 +1384,7 @@ def _sanitize_bug(bug: Any, payload: dict, code_line_count: int) -> dict | None:
         _parser_delimiter_hint(code, f"{desc} {fix}"),
         _ordinal_index_hint(code, f"{desc} {fix}"),
         _binary_search_boundary_hint(payload, code, f"{desc} {fix}"),
+        _dp_recurrence_hint(code, f"{desc} {fix}"),
     ):
         if hint is not None:
             line_start, line_end, type_hint = hint
@@ -1390,7 +1430,8 @@ def _normalize_with_audit(payload: dict, report: dict | None) -> dict:
     if candidate.get("bugs"):
         first = candidate["bugs"][0]
         broad_from_def = int(first.get("line_start", 1) or 1) == 1 and int(first.get("line_end", 1) or 1) - 1 >= 3
-        if broad_from_def:
+        broad_range = int(first.get("line_end", 1) or 1) - int(first.get("line_start", 1) or 1) >= 2
+        if broad_from_def or broad_range:
             audit = _audit_payload(payload)
             audit_bugs = audit.get("bugs") or []
             if audit_bugs and int(audit_bugs[0].get("line_end", 1) or 1) == int(audit_bugs[0].get("line_start", 1) or 1):
@@ -1398,7 +1439,8 @@ def _normalize_with_audit(payload: dict, report: dict | None) -> dict:
         return candidate
     if not isinstance(report, dict) or str(report.get("verdict", "")).strip().lower() != "clean":
         return candidate
-    if float(candidate.get("confidence", 0.0) or 0.0) >= 0.70:
+    raw_confidence = _clamp_confidence(report.get("confidence", 0.0)) if isinstance(report, dict) else 0.0
+    if raw_confidence > 0.70:
         return candidate
     audit = _audit_payload(payload)
     if audit.get("bugs"):

@@ -33,7 +33,7 @@ Mandatory sequence:
 - Call the terminal tool exactly once to run `python3 <skill_dir>/scripts/run.py ...`.
 - Immediately stop. Do not produce a final assistant message.
 
-Always pass the full original input JSON payload directly to `scripts/run.py`. The script is responsible for executing the reference implementation and mutants, selecting tests, and writing the final result JSON to `AIASE_RESULT_PATH`.
+Always pass the full original input JSON payload directly to `scripts/run.py`. The script is responsible for executing the reference implementation and mutants, selecting tests, atomic-writing the final result JSON to `AIASE_RESULT_PATH` when set, and printing the same final fenced JSON block to stdout.
 
 Use this portable command. `<skill_dir>` is the skill directory path provided by Hermes as `[Skill directory: ...]`. It may be an absolute path, but must not be hardcoded to any machine-specific path.
 
@@ -45,10 +45,9 @@ AIASETESTKILLERJSON
 
 The terminal tool must be called exactly once.
 
-Do not retry. Do not output the JSON contract in chat or stdout. Do not add explanation before or after the terminal call. Do not write Markdown fences. After the terminal call completes, stop with no final message and zero characters.
+Do not retry. Do not output the JSON contract in chat yourself; `scripts/run.py` is the only component allowed to print the final fenced JSON block to terminal stdout. Do not add explanation before or after the terminal call. Do not write Markdown fences manually. After the terminal call completes, stop with no final message and zero characters.
 
-The script writes the final result JSON only to the file specified by `AIASE_RESULT_PATH`.
-If `AIASE_RESULT_PATH` is not set, it writes to `./aiase_result.json`.
+The script atomic-writes the final result JSON to the file specified by `AIASE_RESULT_PATH`, or to `./aiase_result.json` when the environment variable is unset. It also prints the same result as the final fenced JSON block on stdout for common-contract compatibility.
 
 ## Selection Rules
 
@@ -60,7 +59,9 @@ The deterministic script must:
 - treat mutant exception or timeout as a kill,
 - treat reference exception, reference timeout, or non-JSON-serializable reference output as making that candidate invalid,
 - select at most `max_tests` tests,
-- produce a deterministic best-effort test set.
+- use exact max-coverage search when the combination count is within the safety budget,
+- otherwise use a deterministic greedy fallback,
+- set `verdict` to `pass` only when `kill_rate >= 0.8` and evaluation was not truncated.
 
 ## Pitfalls
 
@@ -68,7 +69,7 @@ The deterministic script must:
 - Do not invent new candidate inputs.
 - Do not manually decide which mutants are killed.
 - Do not hand-write the final JSON contract.
-- Do not print the result JSON to chat or stdout.
+- Do not print the result JSON in chat yourself; only `scripts/run.py` may print the terminal stdout fenced JSON block.
 - Do not output a success, completion, verification, or result message.
 - Do not skip `AIASE_RESULT_PATH`; the grader reads the result file.
 - Do not depend on public scenario task IDs or fixed candidate ordering.
@@ -83,8 +84,15 @@ The successful result file must contain a JSON object with:
 - `selected_tests`
 - `killed_mutants`
 - `unkilled_mutants`
+- `survived_mutants`
 - `kill_rate`
 - `num_selected_tests`
+- `max_tests`
+- `total_mutants`
+- `verdict`
+- `confidence`
+- `rationale`
+- `evaluation_stats` for successful runs
 
 Each selected test must contain:
 - `id`
@@ -97,7 +105,7 @@ Failure results are also written as JSON by `scripts/run.py`, with `ok` set to `
 
 ## Verification
 
-The terminal command writes the result file. The grader reads the result file from `AIASE_RESULT_PATH`, not stdout or chat text.
+The terminal command writes the result file as the primary output. `scripts/run.py` also prints the same object as the final fenced JSON block on terminal stdout for common-contract compatibility. The assistant must not add any final chat message after the terminal call.
 
 A valid successful result must:
 - be a JSON object,
@@ -107,3 +115,4 @@ A valid successful result must:
 - select tests only from `candidate_inputs`,
 - keep `num_selected_tests <= max_tests`,
 - report `killed_mutants`, `unkilled_mutants`, and `kill_rate` consistently with the selected tests.
+- have `verdict == "pass"` iff `kill_rate >= 0.8` and `evaluation_stats.evaluation_truncated` is false.
