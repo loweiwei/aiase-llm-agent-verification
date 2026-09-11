@@ -1,12 +1,12 @@
 # Verifiable LLM Software Engineering Agents
 
-結合大型語言模型與 deterministic verification 的 AI 軟體工程代理框架。專案重點不是做聊天機器人，而是把 LLM 產生的 SQL、Python 程式與 bug report 轉成可執行、可驗證、可重現的工程輸出。
+這是一個 AI 軟體工程可靠性專題：讓 LLM 產生候選答案，但不直接相信模型輸出，而是用 deterministic wrappers 檢查 SQL、Python code、bug report 與 mutation testing 結果，最後寫出 evaluator 可讀的 JSON artifact。
 
 ## 30 秒摘要
 
 - 主題：LLM agent reliability、程式驗證、mutation testing、Text2SQL。
 - 核心成果：四個可執行 Skill，包含 Text2SQL、Code Author、Bug Hunter、Open Test Killer。
-- 主要貢獻：Open Test Killer 會實際執行 reference implementation 與 mutants，建立 kill matrix，再用 exact search 或 deterministic greedy fallback 選出測試。
+- 主要貢獻：Open Test Killer 實際執行 reference implementation 與 mutants，建立 kill matrix，再用 exact search 或 deterministic greedy fallback 選出測試。
 - 外部評分：AIASE 2026 期末專案總分 **91.38**，Basic Track **30/30**，Open Track **93.2/100**。
 - 本地驗證：`192 passed, 1 skipped` 的 Pytest，加上 Skill self-tests、regression tests 與 repository verifier。
 
@@ -25,6 +25,15 @@ LLM 可以產生看起來合理的答案，但在軟體工程任務中常見問�
 - 模型用自然語言宣稱正確，但缺少可重跑的驗證證據。
 
 本專案的設計原則是：模型負責語意理解，程式負責可以客觀檢查的部分。
+
+## 核心想法
+
+LLM 的優勢是理解自然語言任務；弱點是格式、邊界條件、執行正確性與自我驗證不穩定。本專案把責任拆開：
+
+- `SKILL.md` 規範 Hermes/LLM 怎麼產生候選答案與呼叫工具。
+- `scripts/run.py` 是每個 Skill 的 deterministic wrapper，負責解析、驗證、fallback 與 atomic result-file write。
+- `run_dev.py` 是本地端到端 evaluator，用來測試 Hermes/model 實際是否能完成任務。
+- `tests/`、self-tests、regression scripts 用來證明 contract 與關鍵邊界行為可以重現。
 
 ## 系統架構
 
@@ -45,14 +54,16 @@ flowchart LR
     J --> K[Evaluator]
 ```
 
-## 核心元件
+## 四個 Skill
 
-| Component | Role | Verification |
-|---|---|---|
-| Text2SQL | 將自然語言問題轉成 SQLite query | read-only policy、schema validation、SQLite `EXPLAIN` |
-| Code Author | 產生符合限制的 Python function | AST、entry point、SLOC、imports、sample execution |
-| Bug Hunter | 找出 Python 程式中的具體錯誤 | report normalization、line checks、task oracles、dynamic probes |
-| Open Test Killer | 選出能 kill mutants 的測試輸入 | process timeout、execution-derived kill matrix、exact/greedy selection |
+| Skill | 做什麼 | 主要驗證策略 | 詳細說明 |
+|---|---|---|---|
+| Text2SQL | 將自然語言問題轉成 SQLite query | read-only policy、schema validation、SQLite `EXPLAIN`、safe fallback | [`docs/skills/text2sql.md`](docs/skills/text2sql.md) |
+| Code Author | 產生符合限制的 Python function | AST、entry point、SLOC/import policy、sample execution、template fallback | [`docs/skills/code-author.md`](docs/skills/code-author.md) |
+| Bug Hunter | 找出 Python 程式中的具體錯誤 | report normalization、line/type repair、dynamic probes、task-family oracles | [`docs/skills/bug-hunter.md`](docs/skills/bug-hunter.md) |
+| Open Test Killer | 選出能 kill mutants 的測試輸入 | reference/mutant execution、kill matrix、exact/greedy selection | [`docs/skills/open-test-killer.md`](docs/skills/open-test-killer.md) |
+
+每份 Skill 文件都包含流程架構圖、input/output contract、方法策略、fallback、安全限制與重要檔案。
 
 ## 主要技術貢獻：Open Test Killer
 
@@ -72,6 +83,21 @@ Kill 條件：
 - `kill_rate >= 0.8` 且 evaluation 未被截斷時才輸出 pass verdict。
 
 完整規格見 [`OPEN_TRACK.md`](OPEN_TRACK.md)。
+
+## 我實作的重點
+
+本 repository 同時包含課程 starter/reference material 與個人實作。個人主要貢獻整理如下：
+
+| Area | Contribution |
+|---|---|
+| Output contract | 設計並落實 `AIASE_RESULT_PATH` file-based JSON output，使用 temporary file + `os.replace` 做 atomic write |
+| Text2SQL | SQL fence cleaning、read-only policy、schema-aware validation、SQLite `EXPLAIN`、safe fallback |
+| Code Author | Candidate-first AST validation、SLOC/import policy、sample execution、deterministic templates |
+| Bug Hunter | Candidate report normalization、line/type sanitization、placeholder/speculative report filtering、dynamic probes |
+| Open Test Killer | Reference/mutant execution、kill matrix construction、bounded exact maximum coverage、greedy fallback |
+| Reliability | Worker isolation、timeouts、resource limits、self-tests、regressions、contract tests |
+
+更完整的來源與貢獻說明見 [`docs/CONTRIBUTIONS.md`](docs/CONTRIBUTIONS.md)。
 
 ## 成果證據
 
@@ -135,8 +161,6 @@ docker run --rm verifiable-llm-se-agents
 ```bash
 make selftest
 make verify
-make benchmark
-make evidence
 ```
 
 執行 Hermes/model 端到端開發評測：
@@ -155,14 +179,14 @@ Hermes 設定範例位於 [`docs/hermes-config.example.yaml`](docs/hermes-config
 skills/                  四個個人 Skill 與課程 reference fixtures
 dev_set/                 課程提供的 public development tasks
 tests/                   deterministic test suite
-scripts/                 benchmark、ablation、evidence scripts
-artifacts/               可重現的驗證與 benchmark 摘要
+scripts/                 reproducible benchmark / evidence helpers
+artifacts/               benchmark 與 verification 摘要
+docs/skills/             每個 Skill 的流程、方法與策略說明
 docs/                    技術報告、評測說明、環境與貢獻來源
 run_dev.py               Hermes end-to-end development evaluator
 verify_repo.py           repository contract verifier
 OPEN_TRACK.md            Open Test Killer 完整規格
 AI_Review.md             AIASE 2026 課程評閱回饋
-report.md                原始課程專題報告
 ```
 
 ## 保留文件
@@ -173,6 +197,10 @@ report.md                原始課程專題報告
 | [`docs/EVALUATION.md`](docs/EVALUATION.md) | 成果數字來源、限制與 claims policy |
 | [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) | Python、Hermes、Docker 環境說明 |
 | [`docs/CONTRIBUTIONS.md`](docs/CONTRIBUTIONS.md) | 個人實作、課程素材與 AI 工具使用說明 |
+| [`docs/skills/text2sql.md`](docs/skills/text2sql.md) | Text2SQL 流程、驗證與 fallback |
+| [`docs/skills/code-author.md`](docs/skills/code-author.md) | Code Author 流程、AST/sample checks 與 worker controls |
+| [`docs/skills/bug-hunter.md`](docs/skills/bug-hunter.md) | Bug Hunter normalization、dynamic probes 與限制 |
+| [`docs/skills/open-test-killer.md`](docs/skills/open-test-killer.md) | Open Test Killer kill matrix 與 exact/greedy 策略 |
 | [`SECURITY.md`](SECURITY.md) | 安全限制與 responsible use |
 
 ## 限制

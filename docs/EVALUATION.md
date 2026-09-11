@@ -6,20 +6,20 @@
 
 Python 3.11 clean-container build、完整測試與 `make demo` 結果記錄於 [`artifacts/docker_verification.md`](../artifacts/docker_verification.md)。
 
-歷史 Hermes 開發 runs 的聚合與逐份摘要位於 [`artifacts/benchmarks/model_runs_summary.md`](../artifacts/benchmarks/model_runs_summary.md)。這 100 份 reports 橫跨多次開發版本與 targeted reruns，只適合分析不穩定性與失敗類型，不是受控 baseline，也不能當成 held-out accuracy。
+歷史 Hermes 開發 runs 橫跨多次開發版本與 targeted reruns，只適合分析不穩定性與失敗類型，不是受控 baseline，也不能當成 held-out accuracy。為了讓 GitHub portfolio 精簡，這些 raw/historical summaries 不放入 repository。
 
 ## Experiment Status
 
 | Comparison | Status | Evidence |
 |---|---|---|
 | Open Track exact vs greedy vs equal-budget random | Complete on public development scenarios | `artifacts/benchmarks/open_selection.*` |
-| Raw LLM vs format normalization vs full validation | Complete on public development/reference tasks | `artifacts/model_experiments/matched_raw_format_full_gemma4_3x.*` |
+| Raw LLM vs format normalization vs full validation | Completed during development; summarized here only | no raw model outputs kept in portfolio repo |
 | AST, dynamic-probe, template and fallback ablations | Complete on development/reference fixtures | `artifacts/benchmarks/component_ablations.*` |
 | External course evaluation | Complete | `AI_Review.md` |
 
 ### Matched Raw / Format-Only / Full Comparison
 
-同一批 108 個 no-tool raw responses（36 cases × 3 repetitions）分別重播到 strict raw、format-only 與 full deterministic paths。完整逐題結果位於 [`artifacts/model_experiments/matched_raw_format_full_gemma4_3x.md`](../artifacts/model_experiments/matched_raw_format_full_gemma4_3x.md) 及同名 JSON。
+同一批 108 個 no-tool raw responses（36 cases × 3 repetitions）分別重播到 strict raw、format-only 與 full deterministic paths。為了讓 portfolio repository 精簡，逐題 raw/model outputs 不放入 GitHub；此處只保留聚合結果與限制說明。
 
 | Track | Raw strict | Format-only | Full validation |
 |---|---:|---:|---:|
@@ -87,7 +87,7 @@ Portfolio 修正後的 targeted rerun 顯示 Text2SQL ambiguous-column case 與 
 
 ### Controlled Three-Repetition Run
 
-在 Hermes v0.16.0、Python 3.13.9、config `default_model: gemma4` 下，完整 validated configuration 連續執行三次。指定 reports、排除規則、逐題清理後結果與統計位於 [`artifacts/model_experiments/gemma4_validated_3x_20260829.md`](../artifacts/model_experiments/gemma4_validated_3x_20260829.md) 及同名 JSON。
+在 Hermes v0.16.0、Python 3.13.9、config `default_model: gemma4` 下，完整 validated configuration 連續執行三次。Portfolio repository 不保留逐題模型輸出，只保留聚合統計與失敗分類。
 
 | Skill | Repetition pass rates | Mean | Sample SD | Pooled | Mean task sec |
 |---|---|---:|---:|---:|---:|

@@ -15,5 +15,8 @@ build/
 dev_run_results/
 verify_report.json
 
+# Generated benchmark machine outputs; Markdown summaries are kept for readers
+artifacts/benchmarks/*.json
+
 # Generated dev set sqlite files — students rebuild via dev_set/basic/build_dbs.py
 dev_set/basic/dbs/*.sqlite

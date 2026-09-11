@@ -28,9 +28,6 @@ test: pytest selftest regression verify
 benchmark:
 	$(PYTHON) scripts/run_benchmarks.py
 	$(PYTHON) scripts/run_component_ablations.py
-	$(PYTHON) scripts/summarize_dev_runs.py
-	$(PYTHON) scripts/summarize_controlled_experiment.py experiments/gemma4_validated_3x.json
-	$(PYTHON) scripts/evaluate_matched_baseline.py
 
 evidence: setup
 	$(PYTHON) scripts/run_verification.py
