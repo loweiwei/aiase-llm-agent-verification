@@ -1,18 +1,18 @@
 # Verifiable LLM Software Engineering Agents
 
-這是一個 AI 軟體工程可靠性專題：讓 LLM 產生候選答案，但不直接相信模型輸出，而是用 deterministic wrappers 檢查 SQL、Python code、bug report 與 mutation testing 結果，最後寫出 evaluator 可讀的 JSON artifact。
+這個專案在做一件事：LLM 可以先產生答案，但最後交給評分器的內容不能只靠模型自己說了算。所以我在 SQL、Python code、bug report 和 mutation testing 外面都加了一層可重跑的檢查程式，確認格式、限制、執行結果和 fallback 行為。
 
 ## 30 秒摘要
 
 - 主題：LLM agent reliability、程式驗證、mutation testing、Text2SQL。
 - 核心成果：四個可執行 Skill，包含 Text2SQL、Code Author、Bug Hunter、Open Test Killer。
 - 主要貢獻：Open Test Killer 實際執行 reference implementation 與 mutants，建立 kill matrix，再用 exact search 或 deterministic greedy fallback 選出測試。
-- 外部評分：AIASE 2026 期末專案總分 **91.38**，Basic Track **30/30**，Open Track **93.2/100**。
+- 外部評分：原始 AIASE 2026 課程提交總分 **91.38**，Basic Track **30/30**，Open Track **93.2/100**；private tasks 沒有公開，portfolio branch 沒有重新送老師評分。
 - 本地驗證：`192 passed, 1 skipped` 的 Pytest，加上 Skill self-tests、regression tests 與 repository verifier。
 
 推薦履歷寫法：
 
-> 建置可驗證的 LLM 軟體工程代理框架，結合 SQL validation、AST checks、dynamic probes 與 mutation testing；設計 Open Test Killer，以 execution-derived kill matrix 解 bounded maximum coverage，AIASE 2026 課程外部評測 Open Track 93.2/100、整體專題 91.38。
+> Built a verifiable LLM software-engineering agent framework with SQL validation, AST checks, dynamic probes, and mutation-test selection. The original AIASE 2026 course submission scored 93.2/100 on the Open Track and 91.38 overall.
 
 ## 為什麼做這個
 
@@ -28,7 +28,7 @@ LLM 可以產生看起來合理的答案，但在軟體工程任務中常見問�
 
 ## 核心想法
 
-LLM 的優勢是理解自然語言任務；弱點是格式、邊界條件、執行正確性與自我驗證不穩定。本專案把責任拆開：
+LLM 的優勢是理解自然語言任務；弱點是格式、邊界條件、執行正確性與自我驗證不穩定。我的做法是把責任拆開：
 
 - `SKILL.md` 規範 Hermes/LLM 怎麼產生候選答案與呼叫工具。
 - `scripts/run.py` 是每個 Skill 的 deterministic wrapper，負責解析、驗證、fallback 與 atomic result-file write。
@@ -65,7 +65,7 @@ flowchart LR
 
 每份 Skill 文件都包含流程架構圖、input/output contract、方法策略、fallback、安全限制與重要檔案。
 
-## 主要技術貢獻：Open Test Killer
+## Open Test Killer
 
 Open Test Killer 接收 reference code、mutants、candidate inputs 與 test budget，先執行 reference 得到 expected output，再執行每個 mutant 判斷 candidate 是否 kill 該 mutant。
 
@@ -132,7 +132,7 @@ Kill 條件：
 
 完整成果數字與限制見 [`docs/EVALUATION.md`](docs/EVALUATION.md)。
 
-實驗結果的白話解讀見 [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md)，包含 external course evaluation、local tests、Open Track benchmark、component ablation 與 model-dependent runs。
+實驗結果整理在 [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md)，包含 external course evaluation、local tests、Open Track benchmark、component ablation 與 model-dependent runs。
 
 ## 快速開始
 
@@ -182,7 +182,7 @@ skills/                  四個個人 Skill 與課程 reference fixtures
 dev_set/                 課程提供的 public development tasks
 tests/                   deterministic test suite
 scripts/                 reproducible benchmark / evidence helpers
-artifacts/               benchmark 與 verification 摘要
+artifacts/               benchmark 摘要
 docs/skills/             每個 Skill 的流程、方法與策略說明
 docs/                    技術報告、評測說明、環境與貢獻來源
 run_dev.py               Hermes end-to-end development evaluator
@@ -191,7 +191,7 @@ OPEN_TRACK.md            Open Test Killer 完整規格
 AI_Review.md             AIASE 2026 課程評閱回饋
 ```
 
-## 保留文件
+## Documentation
 
 | Document | Purpose |
 |---|---|

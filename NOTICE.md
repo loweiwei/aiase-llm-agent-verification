@@ -1,5 +1,5 @@
 # Notice
 
-This repository includes material derived from an AIASE 2026 course starter repository, public development tasks and reference Skills. No redistribution license for those course-provided materials is included here.
+This repository includes student-authored work plus material derived from the AIASE 2026 course starter repository, public development tasks and reference Skills.
 
-The repository should remain private until the course owner confirms what may be published. If a public portfolio is needed before then, publish only student-authored code and documentation after separating or replacing course-provided content.
+Course-provided material is kept to make the implementation, tests and comparisons understandable. If a stricter publication policy is required, the portfolio can be reduced to the student-authored Skill implementations and derived documentation.

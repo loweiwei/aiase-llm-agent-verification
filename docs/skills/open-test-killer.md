@@ -1,6 +1,6 @@
 # Open Test Killer Skill
 
-`open-test-killer-loweiwei` 是本專案最主要的技術貢獻。它把 Open Track 設計成 mutation testing problem：給定 reference implementation、mutants、candidate inputs 與 test budget，實際執行程式來選出最能 kill mutants 的測試。
+`open-test-killer-loweiwei` 是這個專案的 mutation-testing track。給定 reference implementation、mutants、candidate inputs 與 test budget，它會實際執行程式、建立 kill matrix，然後選出在預算內能 kill 最多 mutants 的測試。
 
 ## 目標
 
@@ -58,7 +58,7 @@ Candidate input 對某個 mutant 的 kill 成立條件：
 - `kill_rate >= 0.8` 且 evaluation 沒有 truncated 時，`verdict` 才是 `pass`。
 - 如果超過 global deadline 或 `MAX_EVAL_CALLS=2000`，會標記 truncation，避免把不完整搜尋包裝成完整通過。
 
-## 為什麼這是核心貢獻
+## 為什麼這個結果可驗證
 
 這個 Skill 把「測試是否有效」從模型主觀判斷改成 execution-derived evidence。`selected_tests` 裡的 expected output 來自 reference execution；每個 selected test 的 `kills` 來自 mutant execution；最後的 `kill_rate` 可以被另一個 verifier 重新執行檢查。
 
@@ -85,4 +85,4 @@ Candidate input 對某個 mutant 的 kill 成立條件：
 | `skills/open-test-killer-loweiwei/scripts/selftest.py` | 14 個 self-test scenarios |
 | `skills/open-test-killer-loweiwei/scripts/regression.py` | Open Track regression entry |
 | `skills/open-test-killer-loweiwei/scripts/public_scenarios/` | public development scenarios |
-| `OPEN_TRACK.md` | Open Track 完整輸入、輸出與評分規格 |
+| [`OPEN_TRACK.md`](../../OPEN_TRACK.md) | Open Track 完整輸入、輸出與評分規格 |

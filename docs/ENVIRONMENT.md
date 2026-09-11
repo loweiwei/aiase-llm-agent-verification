@@ -3,17 +3,17 @@
 ## Offline Verification
 
 - Operating system: Linux is the primary supported platform.
-- Python: GitHub Actions is configured to test 3.11 and 3.13; the latest local verification used 3.13.9.
+- Python: GitHub Actions is configured to test 3.11 and 3.13; recent local checks used 3.13.9.
 - Dependencies: pinned in `requirements.txt`.
 - Entry point: `make test`.
 
-The checked-in `Dockerfile` uses `python:3.11-slim`, installs only pinned requirements plus `git`/`make`, rebuilds SQLite fixtures and runs the complete offline suite. `.dockerignore` excludes the local virtual environment, generated databases, dev reports and verification artifact so the image tests repository sources rather than host-generated state.
+The checked-in `Dockerfile` uses `python:3.11-slim`, installs only pinned requirements plus `git`/`make`, rebuilds SQLite fixtures and runs the complete offline suite. `.dockerignore` excludes the local virtual environment, generated databases and dev reports so the image tests repository sources rather than host-generated state.
 
 Child-process resource limits rely on POSIX `fork` and `resource`. Other platforms may use weaker in-process fallback behavior and are not the primary security target.
 
 ## Model-Dependent Evaluation
 
-The latest local development run used:
+The recorded local development runs used:
 
 - Hermes Agent v0.16.0, upstream revision `062c17d3`.
 - Python 3.13.9.

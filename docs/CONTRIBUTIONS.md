@@ -33,6 +33,6 @@ Hermes is part of the runtime architecture and generates candidate SQL, code or 
 
 Final claims are based on repository code, deterministic tests or explicitly identified course evaluation. AI-generated suggestions are not treated as evidence without execution or review.
 
-## Publication Status
+## Publication Note
 
-The repository contains course-provided tasks and reference implementations. Their redistribution license has not been confirmed in this repository. Until the instructor or course owner confirms permission, the portfolio repository should remain private or publish only student-authored components and derived documentation.
+This repository separates student-authored work from course-provided fixtures and reference implementations. The course material is kept only to make tests and comparisons reproducible. If a stricter publication policy is required, the portfolio can be reduced further to the student-authored Skill implementations and derived documentation.

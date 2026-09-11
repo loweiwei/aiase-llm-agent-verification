@@ -87,7 +87,7 @@ The Open Track selection comparison is generated with:
 make benchmark
 ```
 
-Artifacts include Python version, Git commit, dirty-worktree status, scenario-level mutation scores, selected tests, evaluated calls and elapsed time. CI uploads the benchmark output from Python 3.13.
+The lightweight benchmark summaries report scenario-level mutation scores and selected-test counts. Raw machine logs are not kept in the portfolio branch because they quickly become stale and make the repository harder to read.
 
 Model-dependent evaluation is separate because it requires Hermes, provider credentials and a model snapshot that the repository does not control.
 
@@ -110,7 +110,7 @@ The same review reported Bug Hunter buggy F1 around 0.67, showing that defect re
 
 The current portfolio branch passes 192 root Pytest checks with one optional skipped check, 45 Code Author self-tests, 31 Bug Hunter self-tests, 14 Open Track self-tests and all three regression suites. Repository verification passes 27/27 checks.
 
-These counts measure deterministic fixtures and contracts. They should not be interpreted as 184 independent benchmark tasks.
+These counts measure deterministic fixtures and contracts. They should not be interpreted as independent held-out benchmark tasks.
 
 ### 5.3 Open Track Development Benchmark
 
@@ -142,9 +142,9 @@ Offline code is reproducible from pinned dependencies, but model output depends 
 
 Process limits reduce the effect of runaway code but do not provide filesystem, network or kernel-level isolation. Adversarial deployment requires a disposable container or VM with stronger controls.
 
-## 7. Planned Experiment
+## 7. Future Work
 
-The next external study should re-evaluate the portfolio commit with the instructor's private suite or another independently governed benchmark. The public matched protocol and component ablations are now complete. Remaining requested metrics are the private Bug Hunter precision/recall breakdown and token usage if the provider exposes it.
+The strongest next validation step would be re-running this portfolio commit on an independently governed private suite. Additional useful evidence would include private Bug Hunter precision/recall breakdowns and token/cost metrics.
 
 ## 8. Conclusion
 
@@ -152,4 +152,4 @@ This project demonstrates a practical architecture for placing deterministic che
 
 ## References
 
-The project builds on standard ideas from LLM code evaluation, Text2SQL validation, mutation testing and metamorphic testing. This portfolio repository keeps the literature discussion inside the technical report to avoid scattering supporting notes across many small files.
+This portfolio omits a formal literature review. The implementation uses standard ideas from Text2SQL validation, mutation testing, metamorphic testing and sandboxed code execution.

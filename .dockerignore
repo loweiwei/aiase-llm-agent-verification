@@ -8,4 +8,3 @@ __pycache__
 dev_run_results
 verify_report.json
 dev_set/basic/dbs/*.sqlite
-artifacts/verification.json

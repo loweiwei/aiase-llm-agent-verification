@@ -2,9 +2,7 @@
 
 本文件記錄成果數字的來源，避免混合課程評分、離線測試與模型端到端結果。
 
-最新完整離線檢查的機器可讀輸出位於 [`artifacts/verification.json`](../artifacts/verification.json)。若該檔標示 `dirty_worktree=true`，應在正式 portfolio commit 後重新產生。
-
-Python 3.11 clean-container build、完整測試與 `make demo` 結果記錄於 [`artifacts/docker_verification.md`](../artifacts/docker_verification.md)。
+本文件只保留目前 portfolio 需要的聚合結果與解讀。過期或含本機路徑的 machine-generated verification logs 不放入 repository，避免證據來源混亂。
 
 歷史 Hermes 開發 runs 橫跨多次開發版本與 targeted reruns，只適合分析不穩定性與失敗類型，不是受控 baseline，也不能當成 held-out accuracy。為了讓 GitHub portfolio 精簡，這些 raw/historical summaries 不放入 repository。
 
@@ -13,7 +11,7 @@ Python 3.11 clean-container build、完整測試與 `make demo` 結果記錄於 
 | Comparison | Status | Evidence |
 |---|---|---|
 | Open Track exact vs greedy vs equal-budget random | Complete on public development scenarios | `artifacts/benchmarks/open_selection.*` |
-| Raw LLM vs format normalization vs full validation | Completed during development; summarized here only | no raw model outputs kept in portfolio repo |
+| Raw LLM vs format normalization vs full validation | Summarized development run | aggregate results only |
 | AST, dynamic-probe, template and fallback ablations | Complete on development/reference fixtures | `artifacts/benchmarks/component_ablations.*` |
 | External course evaluation | Complete | `AI_Review.md` |
 
