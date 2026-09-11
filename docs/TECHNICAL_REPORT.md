@@ -26,7 +26,7 @@ The portfolio version is organized around four questions:
 3. What coverage/cost trade-off exists between random, greedy and exact mutation-test selection?
 4. How robust is the workflow to renamed identifiers, reordered candidates and rewritten task descriptions?
 
-The portfolio now includes a public-development matched replay of 108 raw responses through strict, format-only and full validation paths, plus the offline mutation-test comparison. The original submission also has teacher-held private evaluation; task-level private generalization details remain unavailable.
+The portfolio summarizes a public-development matched replay of 108 raw responses through strict, format-only and full validation paths, plus the offline mutation-test comparison. Raw model outputs are intentionally not kept in the GitHub portfolio. The original submission also has teacher-held private evaluation; task-level private generalization details remain unavailable.
 
 ## 3. System Design
 

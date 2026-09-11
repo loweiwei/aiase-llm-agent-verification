@@ -132,6 +132,8 @@ Kill 條件：
 
 完整成果數字與限制見 [`docs/EVALUATION.md`](docs/EVALUATION.md)。
 
+實驗結果的白話解讀見 [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md)，包含 external course evaluation、local tests、Open Track benchmark、component ablation 與 model-dependent runs。
+
 ## 快速開始
 
 需求：Python 3.11 以上。Hermes 只有在執行模型端到端評測時需要。
@@ -194,6 +196,7 @@ AI_Review.md             AIASE 2026 課程評閱回饋
 | Document | Purpose |
 |---|---|
 | [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) | 完整技術報告 |
+| [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) | 實驗結果解讀：分數代表什麼、不能代表什麼 |
 | [`docs/EVALUATION.md`](docs/EVALUATION.md) | 成果數字來源、限制與 claims policy |
 | [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) | Python、Hermes、Docker 環境說明 |
 | [`docs/CONTRIBUTIONS.md`](docs/CONTRIBUTIONS.md) | 個人實作、課程素材與 AI 工具使用說明 |

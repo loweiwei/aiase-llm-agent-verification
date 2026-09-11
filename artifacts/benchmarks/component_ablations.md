@@ -11,3 +11,11 @@ Development/reference fixtures only; these are not raw-LLM or held-out results.
 | Bug Hunter dynamic audit | 0.000 | 0.500 | line/type overlap recall |
 
 Bug Hunter full configuration clean false-positive rate: 0.000.
+
+## Interpretation
+
+- Text2SQL schema validation prevents invalid SQL from being accepted as final output.
+- Code Author AST/policy checks block unsafe or disallowed code patterns.
+- Code Author templates improve reference-case pass rate when the candidate is invalid or incomplete.
+- Bug Hunter dynamic audit improves line/type overlap recall on these fixtures, but does not cover every possible bug pattern.
+- These are development/reference-fixture checks, so they demonstrate component behavior rather than unseen generalization.
