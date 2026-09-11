@@ -35,6 +35,8 @@ LLM 的優勢是理解自然語言任務；弱點是格式、邊界條件、執�
 - `run_dev.py` 是本地端到端 evaluator，用來測試 Hermes/model 實際是否能完成任務。
 - `tests/`、self-tests、regression scripts 用來證明 contract 與關鍵邊界行為可以重現。
 
+這些 Skill 是 bounded tool-using agents，不是會一直 self-reflect 或 retry 的 autonomous agents。當時 final demo 有嚴格的執行時間限制，所以我刻意沒有設計多輪 retry loop；retry 可能提高單題成功率，但也會讓總時間、token 成本和輸出穩定性變得不好控制。這個專案選擇讓 LLM 先產生一次候選答案，再把時間花在 deterministic validation、fallback 和可重跑的測試上。
+
 ## 系統架構
 
 ```mermaid
