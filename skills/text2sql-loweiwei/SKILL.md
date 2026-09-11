@@ -7,6 +7,11 @@ metadata:
     tags: [sql, text2sql, data, aiase-2026]
     category: data
     requires_toolsets: [terminal]
+required_environment_variables:
+  - name: AIASE_RESULT_PATH
+    prompt: Runtime result file path
+    required_for: file-based AIASE result output
+    optional: true
 ---
 
 # Text2SQL Skill
@@ -51,19 +56,19 @@ The only allowed visible action is one terminal call. Do not answer in natural l
 
 1. Read the input `question` and `db_schema`.
 2. Privately derive one SQLite read-only `SELECT` query that answers the question using only tables and columns present in `db_schema`.
-3. Execute `scripts/run.py` exactly once using CLI flags. The script will normalize and write the final result JSON to `AIASE_RESULT_PATH`.
+3. Execute `scripts/run.py` exactly once. Pass the complete original payload first so the script can validate the candidate against `db_schema`, followed by the SQL marker and candidate query. The script will normalize and write the final result JSON to `AIASE_RESULT_PATH`.
 
 Use this portable command. `<skill_dir>` is the skill directory path provided by Hermes as `[Skill directory: ...]`. It may be an absolute path, but must not be hardcoded to any machine-specific path.
 
 ~~~bash
-python3 <skill_dir>/scripts/run.py \
-  --task_id "<same task_id as input>" \
-  --sql "<single read-only SQLite SELECT query>" \
-  --rationale "<brief reason>" \
-  --confidence 0.8
+python3 <skill_dir>/scripts/run.py <<'AIASESQLINPUT'
+<copy the full original input JSON payload verbatim here>
+__AIASE_SQL_V1__
+<paste the single read-only SQLite SELECT query here>
+AIASESQLINPUT
 ~~~
 
-Do not include `db_schema` in the formal result. Use the input schema only for reasoning, then pass only `task_id`, `sql`, `rationale`, and `confidence` to `run.py`.
+The script uses `db_schema` only for validation. It does not include the schema in the formal result, which still contains only `task_id`, `sql`, `rationale`, and `confidence`.
 
 The script writes the final result JSON to the file specified by `AIASE_RESULT_PATH`.
 If `AIASE_RESULT_PATH` is not set, it writes to `./aiase_result.json`.

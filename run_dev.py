@@ -10,11 +10,11 @@ import argparse
 import glob
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
 import time
-from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -27,6 +27,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 RESULTS_DIR = REPO_ROOT / "dev_run_results"
 HERMES_BASE = ["hermes", "chat", "--toolsets", "skills,terminal", "--yolo", "-Q"]
 RUN_DEV_DEBUG_ENABLED = False
+NO_RESULT_RETRIES = 1
+HERMES_TIMEOUT_SEC = 180
 
 
 def log_progress(message: str) -> None:
@@ -81,8 +83,8 @@ class TrackReport:
 
 
 def bag_equal(rows_a, rows_b) -> bool:
-    """Backward-compatible helper: row order ignored, column order significant."""
-    return Counter(tuple(r) for r in rows_a) == Counter(tuple(r) for r in rows_b)
+    """Backward-compatible alias for the grading contract comparator."""
+    return contract.bag_equal(rows_a, rows_b)
 
 
 def run_sql(db_path: str, sql: str):
@@ -145,6 +147,52 @@ def read_result_or_stdout(path: str, stdout_text: str) -> dict | None:
         return obj
     # Local-dev compatibility for stale Hermes skill runners that still print JSON.
     return extract_last_json_block(stdout_text) or _extract_first_json_object(stdout_text)
+
+
+def recover_fallback_result(result_path: str, task_id: str, fallback_dir: Path = REPO_ROOT, not_before_ns: int = 0) -> bool:
+    """Move a fresh documented fallback result to the evaluator path."""
+    existing = contract.read_result(result_path)
+    if existing is not None and existing.get("task_id") == task_id:
+        return True
+    if os.path.exists(result_path):
+        os.remove(result_path)
+    candidate = fallback_dir / "aiase_result.json"
+    if not candidate.is_file() or candidate.stat().st_mtime_ns < not_before_ns:
+        return False
+    obj = contract.read_result(str(candidate))
+    if obj is None or obj.get("task_id") != task_id:
+        return False
+    os.makedirs(os.path.dirname(os.path.abspath(result_path)), exist_ok=True)
+    os.replace(candidate, result_path)
+    return True
+
+
+def run_hermes(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    process = subprocess.Popen(
+        cmd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=HERMES_TIMEOUT_SEC)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+            process.wait(timeout=2)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+        stdout, stderr = process.communicate()
+        stderr = (stderr or "") + f"\nHermes timed out after {HERMES_TIMEOUT_SEC}s."
+        return subprocess.CompletedProcess(cmd, 124, stdout or "", stderr)
+    return subprocess.CompletedProcess(cmd, process.returncode, stdout or "", stderr or "")
 
 
 def load_basic_tasks() -> list[dict]:
@@ -226,14 +274,29 @@ def invoke_skill(
         cmd += ["-m", model]
     cmd += ["-q", query]
     task_id = payload.get("task_id", "<missing>")
-    log_progress(f"invoke start skill={skill} task_id={task_id} result_path={result_path}")
-    t0 = time.time()
-    proc = subprocess.run(cmd, env=env, capture_output=True, text=True, encoding="utf-8")
-    elapsed = time.time() - t0
-    stdout = proc.stdout or ""
-    stderr = proc.stderr or ""
-    outerr = stdout + stderr
-    log_progress(f"invoke done skill={skill} task_id={task_id} returncode={proc.returncode} elapsed={elapsed:.2f}s")
+    elapsed = 0.0
+    outerr = ""
+    proc = None
+    attempts = 0
+    for attempt in range(NO_RESULT_RETRIES + 1):
+        attempts = attempt + 1
+        log_progress(f"invoke start skill={skill} task_id={task_id} attempt={attempts} result_path={result_path}")
+        t0 = time.time()
+        started_ns = time.time_ns()
+        proc = run_hermes(cmd, env)
+        elapsed += time.time() - t0
+        stdout = proc.stdout or ""
+        stderr = proc.stderr or ""
+        outerr = stdout + stderr
+        recover_fallback_result(result_path, str(task_id), not_before_ns=started_ns)
+        result = contract.read_result(result_path)
+        if result is not None and result.get("task_id") == task_id:
+            log_progress(f"result available skill={skill} task_id={task_id} attempt={attempts} result_path={result_path}")
+            break
+        if attempt < NO_RESULT_RETRIES:
+            log_progress(f"invoke retry skill={skill} task_id={task_id} reason=no-result")
+    assert proc is not None
+    log_progress(f"invoke done skill={skill} task_id={task_id} attempts={attempts} returncode={proc.returncode} elapsed={elapsed:.2f}s")
 
     if debug_dir is not None:
         safe = debug_name or str(payload.get("task_id", "unknown"))
@@ -277,6 +340,7 @@ def invoke_skill(
                     "task_id": payload.get("task_id"),
                     "returncode": proc.returncode,
                     "elapsed_sec": elapsed,
+                    "attempts": attempts,
                     "result_path": result_path,
                     "result_exists": result_exists,
                     "stdout_len": len(stdout),

@@ -18,15 +18,11 @@ models:
     provider: aiase
     model: gemini-2.5-flash
 
-  - id: gemini-2.5-flash
-    provider: aiase
-    model: gemini-2.5-flash
-
 # 預設模型 — 開發期建議先 gemma4(免費迭代),穩了再切 gemini-2.5-flash 驗跨模型。
 default_model: gemma4
 
 # 讓 Hermes 直接掃描你 repo 內的 skills 資料夾,不必複製到 ~/.hermes/skills/。
-# 請改成你本機 repo 的 absolute path。
+# 請將 placeholder 改成你本機 repository 的完整路徑。
 skills:
   external_dirs:
-    - /home/vivian/Desktop/TAICA_AIASE2026/final/final-project-loweiwei/skills
+    - "<repository-root>/skills"

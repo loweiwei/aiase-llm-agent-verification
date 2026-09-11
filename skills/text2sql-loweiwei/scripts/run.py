@@ -29,6 +29,7 @@ OUT_OF_ENVELOPE = re.compile(
 )
 FENCED_SQL = re.compile(r"```(?:sql)?\s*(.*?)\s*```", re.IGNORECASE | re.DOTALL)
 SAFE_FALLBACK_SQL = "SELECT NULL WHERE 0"
+SQL_DELIMITER = "__AIASE_SQL_V1__"
 
 
 def resolve_result_path() -> str:
@@ -216,6 +217,24 @@ def _clamp_confidence(v) -> float:
     return f
 
 
+def parse_payload(raw: str) -> dict:
+    text = raw.lstrip()
+    payload, end = json.JSONDecoder().raw_decode(text)
+    if not isinstance(payload, dict):
+        raise ValueError("payload not an object")
+    remainder = text[end:].strip()
+    if remainder:
+        lines = remainder.splitlines()
+        if not lines or lines[0].strip() != SQL_DELIMITER:
+            raise ValueError("unexpected content after payload")
+        sql = "\n".join(lines[1:]).strip()
+        payload = dict(payload)
+        payload["sql"] = sql
+        payload.setdefault("rationale", "Candidate SQL validated against the supplied schema.")
+        payload.setdefault("confidence", 0.8)
+    return payload
+
+
 def main(argv: list[str]) -> int:
     if any(arg.startswith("--") for arg in argv[1:]):
         import argparse
@@ -249,9 +268,7 @@ def main(argv: list[str]) -> int:
         })
 
     try:
-        payload = json.loads(raw)
-        if not isinstance(payload, dict):
-            raise ValueError("payload not an object")
+        payload = parse_payload(raw)
     except (json.JSONDecodeError, ValueError) as e:
         return emit_contract({
             "task_id": "",

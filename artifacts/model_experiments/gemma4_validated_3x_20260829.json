@@ -1,0 +1,1154 @@
+{
+  "experiment_id": "gemma4_validated_3x_20260829",
+  "configuration": "full_deterministic_validation_fallback",
+  "dataset": "course_public_development_tasks",
+  "repetitions": 3,
+  "model_resolution": "Hermes default_model",
+  "model_alias": "gemma4",
+  "hermes_version": "0.16.0",
+  "hermes_revision": "062c17d3",
+  "python": "3.13.9",
+  "branch": "portfolio",
+  "base_commit": "4708531e56b5bf1dfc3d7ebf28c8d6ee640844e6",
+  "dirty_worktree": true,
+  "token_usage": null,
+  "runs": [
+    {
+      "repetition": 1,
+      "reports": [
+        "basic_text2sql-loweiwei_20260829_165837.json",
+        "pairwise_code-author_code-author-loweiwei_20260829_170037.json",
+        "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_170515.json"
+      ]
+    },
+    {
+      "repetition": 2,
+      "reports": [
+        "basic_text2sql-loweiwei_20260829_171010.json",
+        "pairwise_code-author_code-author-loweiwei_20260829_171146.json",
+        "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_171633.json"
+      ]
+    },
+    {
+      "repetition": 3,
+      "reports": [
+        "basic_text2sql-loweiwei_20260829_172527.json",
+        "pairwise_code-author_code-author-loweiwei_20260829_172717.json",
+        "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_173208.json"
+      ]
+    }
+  ],
+  "excluded_setup_run": {
+    "report": "basic_text2sql-loweiwei_20260829_165316.json",
+    "reason": "Passing --model gemma4 sent the local alias as a provider model ID and returned HTTP 400 for every task. It is excluded before analysis."
+  },
+  "manifest": "experiments/gemma4_validated_3x.json",
+  "skills": [
+    {
+      "skill": "bug-hunter-loweiwei",
+      "repetition_pass_rates": [
+        1.0,
+        0.8,
+        0.6
+      ],
+      "mean_pass_rate": 0.8,
+      "sample_stdev_pass_rate": 0.2,
+      "pooled_pass_rate": 0.8,
+      "passed_task_runs": 12,
+      "total_task_runs": 15,
+      "mean_task_elapsed_sec": 55.6741021156311,
+      "sample_stdev_task_elapsed_sec": 48.87699119889915,
+      "failure_counts": {
+        "semantic_model_error": 3
+      },
+      "failure_rates": {
+        "semantic_model_error": 0.2
+      },
+      "mean_recall_like": 0.7333333333333333,
+      "clean_false_positive_rate": 0.06666666666666667,
+      "task_passes_across_repetitions": {
+        "task_pair_001": 3,
+        "task_pair_002": 3,
+        "task_pair_003": 2,
+        "task_pair_004": 3,
+        "task_pair_005": 1
+      }
+    },
+    {
+      "skill": "code-author-loweiwei",
+      "repetition_pass_rates": [
+        0.8,
+        0.4,
+        0.6
+      ],
+      "mean_pass_rate": 0.6,
+      "sample_stdev_pass_rate": 0.2,
+      "pooled_pass_rate": 0.6,
+      "passed_task_runs": 9,
+      "total_task_runs": 15,
+      "mean_task_elapsed_sec": 20.050579039255776,
+      "sample_stdev_task_elapsed_sec": 12.8784355238627,
+      "failure_counts": {
+        "contract_or_tool_use": 6
+      },
+      "failure_rates": {
+        "contract_or_tool_use": 0.4
+      },
+      "mean_recall_like": null,
+      "clean_false_positive_rate": null,
+      "task_passes_across_repetitions": {
+        "task_pair_001": 3,
+        "task_pair_002": 1,
+        "task_pair_003": 1,
+        "task_pair_004": 3,
+        "task_pair_005": 1
+      }
+    },
+    {
+      "skill": "text2sql-loweiwei",
+      "repetition_pass_rates": [
+        0.8571428571428571,
+        0.9047619047619048,
+        0.9523809523809523
+      ],
+      "mean_pass_rate": 0.9047619047619048,
+      "sample_stdev_pass_rate": 0.047619047619047616,
+      "pooled_pass_rate": 0.9047619047619048,
+      "passed_task_runs": 57,
+      "total_task_runs": 63,
+      "mean_task_elapsed_sec": 17.466344031076584,
+      "sample_stdev_task_elapsed_sec": 19.806903593907023,
+      "failure_counts": {
+        "contract_or_tool_use": 1,
+        "semantic_model_error": 5
+      },
+      "failure_rates": {
+        "contract_or_tool_use": 0.015873015873015872,
+        "semantic_model_error": 0.07936507936507936
+      },
+      "mean_recall_like": null,
+      "clean_false_positive_rate": null,
+      "task_passes_across_repetitions": {
+        "task_nl2sql_001": 3,
+        "task_nl2sql_002": 3,
+        "task_nl2sql_003": 3,
+        "task_nl2sql_004": 2,
+        "task_nl2sql_005": 3,
+        "task_nl2sql_006": 3,
+        "task_nl2sql_007": 3,
+        "task_nl2sql_008": 3,
+        "task_nl2sql_009": 3,
+        "task_nl2sql_010": 3,
+        "task_nl2sql_011": 3,
+        "task_nl2sql_012": 3,
+        "task_nl2sql_013": 3,
+        "task_nl2sql_014": 3,
+        "task_nl2sql_015": 3,
+        "task_nl2sql_016": 3,
+        "task_nl2sql_017": 3,
+        "task_nl2sql_018": 0,
+        "task_nl2sql_019": 1,
+        "task_nl2sql_020": 3,
+        "task_nl2sql_EXAMPLE": 3
+      }
+    }
+  ],
+  "sanitized_task_level_results": [
+    {
+      "repetition": 1,
+      "report": "basic_text2sql-loweiwei_20260829_165837.json",
+      "skill": "text2sql-loweiwei",
+      "pass_rate": 0.8571428571428571,
+      "results": [
+        {
+          "task_id": "task_nl2sql_001",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 25.610748052597046,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_002",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.09274172782898,
+          "metrics": {
+            "gold_rowcount": 5,
+            "student_rowcount": 5
+          }
+        },
+        {
+          "task_id": "task_nl2sql_003",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.582536697387695,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_004",
+          "passed": false,
+          "reason": "result set differs from gold",
+          "elapsed_sec": 16.914321422576904,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 9
+          }
+        },
+        {
+          "task_id": "task_nl2sql_005",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 24.358548879623413,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_006",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 10.760169267654419,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_007",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 8.816570281982422,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_008",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.057389974594116,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_009",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 10.196859359741211,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_010",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.171231746673584,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_011",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 24.85061740875244,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_012",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.91645860671997,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_013",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.621373891830444,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_014",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.165782690048218,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_015",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 10.2980318069458,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_016",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 8.428499937057495,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_017",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 20.224860668182373,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_018",
+          "passed": false,
+          "reason": "no result file / invalid json",
+          "elapsed_sec": 6.36004900932312,
+          "metrics": {}
+        },
+        {
+          "task_id": "task_nl2sql_019",
+          "passed": false,
+          "reason": "result set differs from gold",
+          "elapsed_sec": 14.522414207458496,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 0
+          }
+        },
+        {
+          "task_id": "task_nl2sql_020",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 22.900689840316772,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_EXAMPLE",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.243884563446045,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_170037.json",
+      "skill": "code-author-loweiwei",
+      "pass_rate": 0.8,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 46.46788454055786,
+          "metrics": {
+            "passed_cases": 7,
+            "total_cases": 7
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 27.313912868499756,
+          "metrics": {
+            "passed_cases": 8,
+            "total_cases": 8
+          }
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 20.59916114807129,
+          "metrics": {
+            "passed_cases": 7,
+            "total_cases": 7
+          }
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 13.661757230758667,
+          "metrics": {
+            "passed_cases": 8,
+            "total_cases": 8
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 5.865208625793457,
+          "metrics": {}
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_170515.json",
+      "skill": "bug-hunter-loweiwei",
+      "pass_rate": 1.0,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 26.76052188873291,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 24.09764790534973,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 128.59088349342346,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 27.78167724609375,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.5,
+            "recall_like": 0.5
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 65.45842599868774,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.5,
+            "recall_like": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "report": "basic_text2sql-loweiwei_20260829_171010.json",
+      "skill": "text2sql-loweiwei",
+      "pass_rate": 0.9047619047619048,
+      "results": [
+        {
+          "task_id": "task_nl2sql_001",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 18.21137762069702,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_002",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.15987777709961,
+          "metrics": {
+            "gold_rowcount": 5,
+            "student_rowcount": 5
+          }
+        },
+        {
+          "task_id": "task_nl2sql_003",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.434233665466309,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_004",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.56514573097229,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_005",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.460903644561768,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_006",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.406610250473022,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_007",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.848160028457642,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_008",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 25.681946516036987,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_009",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.522289752960205,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_010",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.293519735336304,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_011",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.779992818832397,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_012",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.92797303199768,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_013",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 11.1980562210083,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_014",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 10.45874309539795,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_015",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.027195692062378,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_016",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.039438247680664,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_017",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.358201503753662,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_018",
+          "passed": false,
+          "reason": "result set differs from gold",
+          "elapsed_sec": 10.637898206710815,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_019",
+          "passed": false,
+          "reason": "result set differs from gold",
+          "elapsed_sec": 11.234891653060913,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 0
+          }
+        },
+        {
+          "task_id": "task_nl2sql_020",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 15.636692523956299,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_EXAMPLE",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 9.742707014083862,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_171146.json",
+      "skill": "code-author-loweiwei",
+      "pass_rate": 0.4,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 38.0252001285553,
+          "metrics": {
+            "passed_cases": 7,
+            "total_cases": 7
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 6.955641269683838,
+          "metrics": {}
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 5.503880023956299,
+          "metrics": {}
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 32.61684274673462,
+          "metrics": {
+            "passed_cases": 8,
+            "total_cases": 8
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 6.739021301269531,
+          "metrics": {}
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_171633.json",
+      "skill": "bug-hunter-loweiwei",
+      "pass_rate": 0.8,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 28.79519271850586,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 20.801095962524414,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 170.88771104812622,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 37.55356574058533,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.5,
+            "recall_like": 0.5
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": false,
+          "reason": "recall=0.00, clean_fp=0",
+          "elapsed_sec": 23.48609948158264,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.0,
+            "recall_like": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "report": "basic_text2sql-loweiwei_20260829_172527.json",
+      "skill": "text2sql-loweiwei",
+      "pass_rate": 0.9523809523809523,
+      "results": [
+        {
+          "task_id": "task_nl2sql_001",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 18.73287081718445,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_002",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 15.752958297729492,
+          "metrics": {
+            "gold_rowcount": 5,
+            "student_rowcount": 5
+          }
+        },
+        {
+          "task_id": "task_nl2sql_003",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 34.429352045059204,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_004",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 23.5568106174469,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_005",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 18.273557901382446,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_006",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 23.999899864196777,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_007",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.981374025344849,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_008",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.575646162033081,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_009",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 18.402642011642456,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_010",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 15.356866598129272,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_011",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.27824354171753,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_012",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 23.7666175365448,
+          "metrics": {
+            "gold_rowcount": 2,
+            "student_rowcount": 2
+          }
+        },
+        {
+          "task_id": "task_nl2sql_013",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.991946935653687,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_014",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 14.411120414733887,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_015",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 18.429969787597656,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_016",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 12.828035831451416,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_017",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 13.582615852355957,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_018",
+          "passed": false,
+          "reason": "result set differs from gold",
+          "elapsed_sec": 20.429415464401245,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        },
+        {
+          "task_id": "task_nl2sql_019",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 166.67265439033508,
+          "metrics": {
+            "gold_rowcount": 4,
+            "student_rowcount": 4
+          }
+        },
+        {
+          "task_id": "task_nl2sql_020",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 15.535550355911255,
+          "metrics": {
+            "gold_rowcount": 1,
+            "student_rowcount": 1
+          }
+        },
+        {
+          "task_id": "task_nl2sql_EXAMPLE",
+          "passed": true,
+          "reason": "result set matches gold (bag-equal)",
+          "elapsed_sec": 10.67189073562622,
+          "metrics": {
+            "gold_rowcount": 3,
+            "student_rowcount": 3
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_172717.json",
+      "skill": "code-author-loweiwei",
+      "pass_rate": 0.6,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 25.031381130218506,
+          "metrics": {
+            "passed_cases": 7,
+            "total_cases": 7
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 7.284564733505249,
+          "metrics": {}
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": false,
+          "reason": "contract violation: missing result file",
+          "elapsed_sec": 22.263713836669922,
+          "metrics": {}
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 14.42133355140686,
+          "metrics": {
+            "passed_cases": 8,
+            "total_cases": 8
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 28.009182453155518,
+          "metrics": {
+            "passed_cases": 8,
+            "total_cases": 8
+          }
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_173208.json",
+      "skill": "bug-hunter-loweiwei",
+      "pass_rate": 0.6,
+      "results": [
+        {
+          "task_id": "task_pair_001",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 24.546899795532227,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_002",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 21.266104221343994,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_003",
+          "passed": false,
+          "reason": "recall=1.00, clean_fp=1",
+          "elapsed_sec": 124.81695199012756,
+          "metrics": {
+            "clean_fp": 1,
+            "jaccard": 1.0,
+            "recall_like": 1.0
+          }
+        },
+        {
+          "task_id": "task_pair_004",
+          "passed": true,
+          "reason": "",
+          "elapsed_sec": 24.227499961853027,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.5,
+            "recall_like": 0.5
+          }
+        },
+        {
+          "task_id": "task_pair_005",
+          "passed": false,
+          "reason": "recall=0.00, clean_fp=0",
+          "elapsed_sec": 86.04125428199768,
+          "metrics": {
+            "clean_fp": 0,
+            "jaccard": 0.0,
+            "recall_like": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

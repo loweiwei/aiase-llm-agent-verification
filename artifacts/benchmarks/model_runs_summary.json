@@ -1,0 +1,1750 @@
+{
+  "dataset": "historical_public_dev_runs",
+  "report_count": 110,
+  "aggregates": [
+    {
+      "skill": "bug-hunter-loweiwei",
+      "report_count": 57,
+      "total_task_runs": 205,
+      "passed_task_runs": 146,
+      "weighted_pass_rate": 0.7121951219512195,
+      "mean_report_elapsed_sec": 68.03945823970594,
+      "categories": {
+        "contract_or_tool_use": 8,
+        "passed": 146,
+        "semantic_model_error": 51
+      }
+    },
+    {
+      "skill": "code-author-loweiwei",
+      "report_count": 25,
+      "total_task_runs": 105,
+      "passed_task_runs": 80,
+      "weighted_pass_rate": 0.7619047619047619,
+      "mean_report_elapsed_sec": 25.822321161270143,
+      "categories": {
+        "contract_or_tool_use": 24,
+        "passed": 80,
+        "semantic_model_error": 1
+      }
+    },
+    {
+      "skill": "text2sql-loweiwei",
+      "report_count": 28,
+      "total_task_runs": 301,
+      "passed_task_runs": 239,
+      "weighted_pass_rate": 0.7940199335548173,
+      "mean_report_elapsed_sec": 17.62902061156675,
+      "categories": {
+        "contract_or_tool_use": 48,
+        "execution": 5,
+        "passed": 239,
+        "semantic_model_error": 9
+      }
+    }
+  ],
+  "reports": [
+    {
+      "report": "basic_text2sql-loweiwei_20260615_102928.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 21,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 16.038453136171615,
+      "stdev_elapsed_sec": 7.307521259876849,
+      "failure_categories": {
+        "passed": 21
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_160950.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 13.076937055587768,
+      "stdev_elapsed_sec": 1.29719379509353,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_161154.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 10,
+      "passed": 10,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 11.582741475105285,
+      "stdev_elapsed_sec": 4.0270194667397625,
+      "failure_categories": {
+        "passed": 10
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_161718.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 21,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 14.204129525593348,
+      "stdev_elapsed_sec": 8.60334689215287,
+      "failure_categories": {
+        "passed": 21
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_182834.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 18,
+      "pass_rate": 0.8571428571428571,
+      "mean_elapsed_sec": 26.76082076345171,
+      "stdev_elapsed_sec": 5.684367402603274,
+      "failure_categories": {
+        "execution": 2,
+        "passed": 18,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_191251.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 20,
+      "pass_rate": 0.9523809523809523,
+      "mean_elapsed_sec": 25.744233880724227,
+      "stdev_elapsed_sec": 7.827046538278161,
+      "failure_categories": {
+        "passed": 20,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_191814.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 20.036611795425415,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_192424.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 36.095463037490845,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260615_193158.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 21,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 20.428197043282644,
+      "stdev_elapsed_sec": 9.628237258613307,
+      "failure_categories": {
+        "passed": 21
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_092647.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 11.143006563186646,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_093230.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 17,
+      "pass_rate": 0.8095238095238095,
+      "mean_elapsed_sec": 15.462546802702404,
+      "stdev_elapsed_sec": 6.906698434475411,
+      "failure_categories": {
+        "contract_or_tool_use": 4,
+        "passed": 17
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_094515.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 22.221899271011353,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_094628.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 10.691479206085205,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_094638.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 20.488214254379272,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_094711.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 53.57869362831116,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260827_095654.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 10.382105827331543,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_114644.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 17,
+      "pass_rate": 0.8095238095238095,
+      "mean_elapsed_sec": 21.403603201820737,
+      "stdev_elapsed_sec": 24.681936936241083,
+      "failure_categories": {
+        "contract_or_tool_use": 2,
+        "passed": 17,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_135124.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 6,
+      "pass_rate": 0.2857142857142857,
+      "mean_elapsed_sec": 17.207878566923597,
+      "stdev_elapsed_sec": 18.837713814262774,
+      "failure_categories": {
+        "contract_or_tool_use": 14,
+        "execution": 1,
+        "passed": 6
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_135824.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 10.559008359909058,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_140356.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 19,
+      "pass_rate": 0.9047619047619048,
+      "mean_elapsed_sec": 14.56026310012454,
+      "stdev_elapsed_sec": 4.659967426240281,
+      "failure_categories": {
+        "execution": 2,
+        "passed": 19
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_144035.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 21.858529806137085,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_144055.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 3.9375288486480713,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_144123.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 12.42772364616394,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_144336.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 8.136005401611328,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_165316.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 3.1874708334604898,
+      "stdev_elapsed_sec": 0.18701992878480836,
+      "failure_categories": {
+        "contract_or_tool_use": 21
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_165837.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 18,
+      "pass_rate": 0.8571428571428571,
+      "mean_elapsed_sec": 14.38541809717814,
+      "stdev_elapsed_sec": 5.658910644097672,
+      "failure_categories": {
+        "contract_or_tool_use": 1,
+        "passed": 18,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_171010.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 19,
+      "pass_rate": 0.9047619047619048,
+      "mean_elapsed_sec": 13.36313593955267,
+      "stdev_elapsed_sec": 3.3583419959004797,
+      "failure_categories": {
+        "passed": 19,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "basic_text2sql-loweiwei_20260829_172527.json",
+      "track": "basic",
+      "skill": "text2sql-loweiwei",
+      "role": "",
+      "total": 21,
+      "passed": 20,
+      "pass_rate": 0.9523809523809523,
+      "mean_elapsed_sec": 24.650478056498937,
+      "stdev_elapsed_sec": 32.202744672530535,
+      "failure_categories": {
+        "passed": 20,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_082115.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 23.021586465835572,
+      "stdev_elapsed_sec": 26.83241999489413,
+      "failure_categories": {
+        "contract_or_tool_use": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_083005.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 66.75891695022582,
+      "stdev_elapsed_sec": 64.08447824230399,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_085139.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 112.06724586486817,
+      "stdev_elapsed_sec": 89.43789994715608,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_091210.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 85.96704983711243,
+      "stdev_elapsed_sec": 81.9119026227377,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_091744.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 57.04182147979736,
+      "stdev_elapsed_sec": 30.766080480091862,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_092440.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 50.78501825332641,
+      "stdev_elapsed_sec": 17.108577498244784,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_093256.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 87.79749765396119,
+      "stdev_elapsed_sec": 82.13237991246231,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_094100.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 2,
+      "pass_rate": 0.4,
+      "mean_elapsed_sec": 83.31264476776123,
+      "stdev_elapsed_sec": 75.26240244097406,
+      "failure_categories": {
+        "passed": 2,
+        "semantic_model_error": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_094655.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 55.33410496711731,
+      "stdev_elapsed_sec": 42.30533840412618,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_105435.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 60.971704959869385,
+      "stdev_elapsed_sec": 33.904537325905366,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_110636.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 59.10883059501648,
+      "stdev_elapsed_sec": 28.18161172000026,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_111837.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 69.22734389305114,
+      "stdev_elapsed_sec": 34.47011366654711,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_121801.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 2,
+      "pass_rate": 0.4,
+      "mean_elapsed_sec": 65.24333515167237,
+      "stdev_elapsed_sec": 12.108084570662896,
+      "failure_categories": {
+        "passed": 2,
+        "semantic_model_error": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_184308.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 2,
+      "pass_rate": 0.4,
+      "mean_elapsed_sec": 92.58667726516724,
+      "stdev_elapsed_sec": 38.075362832570086,
+      "failure_categories": {
+        "passed": 2,
+        "semantic_model_error": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_203247.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 72.83380537033081,
+      "stdev_elapsed_sec": 22.77614499310996,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_205105.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 130.48981714248657,
+      "stdev_elapsed_sec": 129.62321956360887,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_205212.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 52.297866106033325,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_213731.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 137.3435459136963,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_214531.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 88.33304891586303,
+      "stdev_elapsed_sec": 54.939043563922745,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_215524.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 78.41865792274476,
+      "stdev_elapsed_sec": 15.772740738214043,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_220507.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 88.60387172698975,
+      "stdev_elapsed_sec": 33.21483184369862,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_220530.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 13.727757692337036,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_220624.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 11.929952144622803,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_221350.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 87.94799237251281,
+      "stdev_elapsed_sec": 53.49723170231755,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_221415.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 14.05189824104309,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_221509.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 11.996811389923096,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260615_221548.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 14.344175577163696,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_071915.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 119.43973140716552,
+      "stdev_elapsed_sec": 48.1961309960695,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_073427.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 141.18402833938597,
+      "stdev_elapsed_sec": 65.32031870431794,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_074310.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 96.42522954940796,
+      "stdev_elapsed_sec": 39.73245603138657,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_125339.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 113.22879185676575,
+      "stdev_elapsed_sec": 121.2478464082805,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_125447.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 57.33110976219177,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_131033.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 149.42833228111266,
+      "stdev_elapsed_sec": 158.61603805662676,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_131058.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 12.758018493652344,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_131649.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 363.6604950428009,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_131843.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 71.01029825210571,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_132913.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 123.16740012168884,
+      "stdev_elapsed_sec": 140.23166356468977,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_132936.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 12.088146448135376,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_133603.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 64.78719716072082,
+      "stdev_elapsed_sec": 25.668203644534522,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_133622.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 11.877918481826782,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_133711.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 11.23136019706726,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_134902.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 138.7527485847473,
+      "stdev_elapsed_sec": 112.1622361530955,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_135048.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 62.82067680358887,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_135534.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 51.64298934936524,
+      "stdev_elapsed_sec": 23.625186413186757,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_135557.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 11.32578444480896,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_135641.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 12.621035814285278,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260616_140416.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 87.95434784889221,
+      "stdev_elapsed_sec": 37.86137817303886,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260827_093055.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 45.862327003479,
+      "stdev_elapsed_sec": 37.47464157387855,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260827_094629.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 12.261724710464478,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "contract_or_tool_use": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260827_095750.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 26.88820505142212,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_115151.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 41.74354772567749,
+      "stdev_elapsed_sec": 38.352204352259776,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_135705.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 32.374875831604,
+      "stdev_elapsed_sec": 29.83964288868267,
+      "failure_categories": {
+        "contract_or_tool_use": 2,
+        "passed": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_140909.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 44.37894840240479,
+      "stdev_elapsed_sec": 33.216133592047726,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_144154.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 23.438565731048584,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_170515.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 54.53783130645752,
+      "stdev_elapsed_sec": 40.04295041757158,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_171633.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 56.304732990264895,
+      "stdev_elapsed_sec": 57.57640295706578,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_bug-hunter_bug-hunter-loweiwei_20260829_173208.json",
+      "track": "pairwise",
+      "skill": "bug-hunter-loweiwei",
+      "role": "bug-hunter",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 56.1797420501709,
+      "stdev_elapsed_sec": 42.05548975135837,
+      "failure_categories": {
+        "passed": 3,
+        "semantic_model_error": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260615_101550.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 21.704295492172243,
+      "stdev_elapsed_sec": 5.654990088313482,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260615_115645.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 21.246690702438354,
+      "stdev_elapsed_sec": 6.999245977519676,
+      "failure_categories": {
+        "passed": 4,
+        "semantic_model_error": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260615_120941.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 29.964754343032837,
+      "stdev_elapsed_sec": 13.265427053719556,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260615_183512.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 63.00072145462036,
+      "stdev_elapsed_sec": 43.31786377326467,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_114728.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 38.544282865524295,
+      "stdev_elapsed_sec": 10.81840289927821,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_115254.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 40.6711612701416,
+      "stdev_elapsed_sec": 36.97869336334381,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_115359.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 5.731620168685913,
+      "stdev_elapsed_sec": 0.6350887910883917,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_124603.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 22.115274381637573,
+      "stdev_elapsed_sec": 8.879097164999404,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_130050.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 32.927969980239865,
+      "stdev_elapsed_sec": 14.398931328258897,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_132128.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 30.220987558364868,
+      "stdev_elapsed_sec": 20.15386215070246,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260616_140714.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 5,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 33.54893860816956,
+      "stdev_elapsed_sec": 10.482906797266688,
+      "failure_categories": {
+        "passed": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260827_092818.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "mean_elapsed_sec": 14.504199171066285,
+      "stdev_elapsed_sec": 6.359102127039172,
+      "failure_categories": {
+        "contract_or_tool_use": 5
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260827_094554.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 61.781256675720215,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260827_094803.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 1,
+      "pass_rate": 0.2,
+      "mean_elapsed_sec": 21.277362489700316,
+      "stdev_elapsed_sec": 10.584224036187633,
+      "failure_categories": {
+        "contract_or_tool_use": 4,
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260827_095717.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 17.344319343566895,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260827_095951.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 20.727707815170287,
+      "stdev_elapsed_sec": 10.363862496227103,
+      "failure_categories": {
+        "contract_or_tool_use": 2,
+        "passed": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_114819.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 1,
+      "pass_rate": 0.2,
+      "mean_elapsed_sec": 17.819725656509398,
+      "stdev_elapsed_sec": 5.189546644110828,
+      "failure_categories": {
+        "contract_or_tool_use": 4,
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_134514.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 13.165109872817993,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_135418.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 33.17270450592041,
+      "stdev_elapsed_sec": 29.750156551725038,
+      "failure_categories": {
+        "contract_or_tool_use": 2,
+        "passed": 3
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_135842.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 12.676860570907593,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_140523.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 16.500204038619994,
+      "stdev_elapsed_sec": 8.199840223058835,
+      "failure_categories": {
+        "contract_or_tool_use": 1,
+        "passed": 4
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_140934.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 1,
+      "passed": 1,
+      "pass_rate": 1.0,
+      "mean_elapsed_sec": 16.76014494895935,
+      "stdev_elapsed_sec": 0.0,
+      "failure_categories": {
+        "passed": 1
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_170037.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 4,
+      "pass_rate": 0.8,
+      "mean_elapsed_sec": 22.781584882736205,
+      "stdev_elapsed_sec": 13.825200207422077,
+      "failure_categories": {
+        "contract_or_tool_use": 1,
+        "passed": 4
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_171146.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 2,
+      "pass_rate": 0.4,
+      "mean_elapsed_sec": 17.96811709403992,
+      "stdev_elapsed_sec": 14.280029166257664,
+      "failure_categories": {
+        "contract_or_tool_use": 3,
+        "passed": 2
+      },
+      "token_usage": null
+    },
+    {
+      "report": "pairwise_code-author_code-author-loweiwei_20260829_172717.json",
+      "track": "pairwise",
+      "skill": "code-author-loweiwei",
+      "role": "code-author",
+      "total": 5,
+      "passed": 3,
+      "pass_rate": 0.6,
+      "mean_elapsed_sec": 19.40203514099121,
+      "stdev_elapsed_sec": 7.557806606123422,
+      "failure_categories": {
+        "contract_or_tool_use": 2,
+        "passed": 3
+      },
+      "token_usage": null
+    }
+  ]
+}

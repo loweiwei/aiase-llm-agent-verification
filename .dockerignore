@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.env
+.hermes
+dev_run_results
+verify_report.json
+dev_set/basic/dbs/*.sqlite
+artifacts/verification.json

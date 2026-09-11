@@ -1,176 +1,184 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/0_h2Gwpe)
-# AIASE 2026 期末專案 Starter Repo
+# Verifiable LLM Software Engineering Agents
 
-> 在 Hermes Agent 上打造可驗證的 Skill。詳細規格請看課程公布的Final Project細節。本檔只說明 starter repo 怎麼開始、怎麼自測、繳交前要檢查什麼。
+結合大型語言模型與 deterministic verification 的 AI 軟體工程代理框架。專案重點不是做聊天機器人，而是把 LLM 產生的 SQL、Python 程式與 bug report 轉成可執行、可驗證、可重現的工程輸出。
 
----
+## 30 秒摘要
 
-## 快速開始 — 四步驟
+- 主題：LLM agent reliability、程式驗證、mutation testing、Text2SQL。
+- 核心成果：四個可執行 Skill，包含 Text2SQL、Code Author、Bug Hunter、Open Test Killer。
+- 主要貢獻：Open Test Killer 會實際執行 reference implementation 與 mutants，建立 kill matrix，再用 exact search 或 deterministic greedy fallback 選出測試。
+- 外部評分：AIASE 2026 期末專案總分 **91.38**，Basic Track **30/30**，Open Track **93.2/100**。
+- 本地驗證：`192 passed, 1 skipped` 的 Pytest，加上 Skill self-tests、regression tests 與 repository verifier。
 
-### 1. 從課程 starter repo 拉內容,推到你自己的 GitHub Classroom repo
+推薦履歷寫法：
 
-當你接受期末作業的 GitHub Classroom invitation 後,課程會在 `Netdb-NCKU` org 之下幫你開一個 private repo,名為 `final-project-loweiwei`(預設沒有內容)。你需要把本課程的 **starter repo** clone 下來,然後 push 到你自己的那個 classroom repo:
+> 建置可驗證的 LLM 軟體工程代理框架，結合 SQL validation、AST checks、dynamic probes 與 mutation testing；設計 Open Test Killer，以 execution-derived kill matrix 解 bounded maximum coverage，AIASE 2026 課程外部評測 Open Track 93.2/100、整體專題 91.38。
+
+## 為什麼做這個
+
+LLM 可以產生看起來合理的答案，但在軟體工程任務中常見問題包含：
+
+- JSON contract 格式錯誤，evaluator 無法讀取。
+- SQL 查詢引用不存在或 ambiguous 的 table/column。
+- Python 程式語法正確但 sample test 或邊界案例失敗。
+- Bug report 的行號、錯誤類型或修正建議與實際行為不一致。
+- 模型用自然語言宣稱正確，但缺少可重跑的驗證證據。
+
+本專案的設計原則是：模型負責語意理解，程式負責可以客觀檢查的部分。
+
+## 系統架構
+
+```mermaid
+flowchart LR
+    A[Task payload] --> B[Hermes / LLM]
+    B --> C[Candidate answer]
+    C --> D[Deterministic wrapper]
+    D --> E{Verification}
+    E -->|Text2SQL| F[SQLite schema and execution checks]
+    E -->|Code Author| G[AST, policy and sample tests]
+    E -->|Bug Hunter| H[Normalization and dynamic probes]
+    E -->|Open Test Killer| I[Reference and mutant execution]
+    F --> J[Atomic JSON result]
+    G --> J
+    H --> J
+    I --> J
+    J --> K[Evaluator]
+```
+
+## 核心元件
+
+| Component | Role | Verification |
+|---|---|---|
+| Text2SQL | 將自然語言問題轉成 SQLite query | read-only policy、schema validation、SQLite `EXPLAIN` |
+| Code Author | 產生符合限制的 Python function | AST、entry point、SLOC、imports、sample execution |
+| Bug Hunter | 找出 Python 程式中的具體錯誤 | report normalization、line checks、task oracles、dynamic probes |
+| Open Test Killer | 選出能 kill mutants 的測試輸入 | process timeout、execution-derived kill matrix、exact/greedy selection |
+
+## 主要技術貢獻：Open Test Killer
+
+Open Test Killer 接收 reference code、mutants、candidate inputs 與 test budget，先執行 reference 得到 expected output，再執行每個 mutant 判斷 candidate 是否 kill 該 mutant。
+
+Kill 條件：
+
+- mutant 輸出與 reference 不同。
+- mutant 丟出 exception，但 reference 成功。
+- mutant timeout，但 reference 成功。
+
+選取策略：
+
+- candidate combinations 不超過 `25,000` 時使用 exact maximum-coverage search。
+- 超出預算時使用 deterministic greedy fallback。
+- matrix construction 受 `2,000` 次 evaluation call 與 global deadline 限制。
+- `kill_rate >= 0.8` 且 evaluation 未被截斷時才輸出 pass verdict。
+
+完整規格見 [`OPEN_TRACK.md`](OPEN_TRACK.md)。
+
+## 成果證據
+
+### 外部課程評測
+
+| Track | Result |
+|---|---:|
+| Basic Track, Text2SQL | 30.0 / 30 |
+| Pairwise Track, Bug Hunter | 8.33 / 10 |
+| Open Track | 93.2 / 100 |
+| Overall project score | 91.38 |
+
+課程評語與分數來源見 [`AI_Review.md`](AI_Review.md)。老師端 private tasks 與 labels 未公開，因此 repository 無法重跑 private evaluation。
+
+### 本地 deterministic verification
+
+| Check | Result |
+|---|---:|
+| Root Pytest | 192 passed, 1 skipped |
+| Code Author self-test | 45 passed, 0 failed |
+| Bug Hunter self-test | 31 passed, 0 failed |
+| Open Track self-test | 14 passed, 0 failed |
+| Repository verifier | 27 / 27 |
+
+### Public benchmark 摘要
+
+| Scenario | Exact | Greedy | Random mean |
+|---|---:|---:|---:|
+| merge_intervals | 1.000 | 1.000 | 0.746 |
+| top_k_frequent | 1.000 | 1.000 | 0.792 |
+| valid_parentheses | 0.800 | 0.800 | 0.436 |
+
+完整成果數字與限制見 [`docs/EVALUATION.md`](docs/EVALUATION.md)。
+
+## 快速開始
+
+需求：Python 3.11 以上。Hermes 只有在執行模型端到端評測時需要。
 
 ```bash
-# (a) 從課程 starter 取得初始內容
-git clone https://github.com/Netdb-NCKU/aiase2026-final-project-Final-Project.git final-project-loweiwei
-cd final-project-loweiwei
-
-# (b) 把 origin 改成你自己的 classroom repo
-git remote set-url origin https://github.com/Netdb-NCKU/final-project-loweiwei.git
-
-# (c) 把 starter 內容推到你的 classroom repo
-git push -u origin main
-
-# (d) 安裝本地開發 deps
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
-```
-
-之後所有開發、commit、push 都在你自己的 classroom repo 內進行。**deadline 一過,課程會把全班所有 classroom repo clone 到 local 進行評分**,只認你 default branch 上的最終 commit。
-
-> 若 (c) 失敗、提示 "Updates were rejected because the remote contains work that you do not have locally",代表你的 classroom repo 不是完全空的(可能 GitHub 預設帶了一個 README 之類)。聯繫 TA 確認後再決定要 `git pull --rebase origin main` 合併、或重新初始化。
-
-### 2. 把所有 `loweiwei` / `loweiwei` 改成你的 GitHub ID
-
-`loweiwei` 以 GitHub Classroom roster mapping 為準。需要改的地方:
-
-- `skills/text2sql-loweiwei/`、`skills/code-author-loweiwei/`、`skills/bug-hunter-loweiwei/` 這三個骨架資料夾的名字
-- 每個 `SKILL.md` 的 frontmatter `name:` 欄位
-- `PAIRWISE_ROLE.md` 內的 `skill_path:`
-- Open Track 沒有骨架,請依 `OPEN_TRACK.md` 模板**自行建立** `skills/open-<short-name>-loweiwei/`(`<short-name>` 自取);完成後在 `OPEN_TRACK.md` 的「## 2. Skill 名稱與目錄」填入該路徑。
-
-方便起見可用:
-
-```bash
-GH=<your_github_id>
-find skills -depth -type d -name '*loweiwei*' | while read d; do
-  mv "$d" "${d/loweiwei/$GH}"
-done
-grep -rl 'loweiwei' . | xargs sed -i '' "s/loweiwei/$GH/g"   # macOS
-# grep -rl 'loweiwei' . | xargs sed -i    "s/loweiwei/$GH/g"  # Linux
-```
-
-> 改完請以 `grep -r loweiwei .` 確認沒有殘留。
-
-### 3. 安裝 Hermes Agent 並把 model provider 指向課程 LiteLLM Gateway
-
-```bash
-# 安裝 Hermes（以官方文件 / starter repo pin 的版本為準）
-curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
-source ~/.bashrc   # 或 source ~/.zshrc
-hermes doctor
-```
-
-把 `docs/hermes-config.example.yaml` 與 `docs/hermes-env.example` 的內容貼進你的 `~/.hermes/config.yaml` 與 `~/.hermes/.env`(或 export 環境變數)。**LiteLLM token 由課程統一提供**,不要自備。
-
-確認:
-
-```bash
-hermes model         # 應該看到 aiase/gemma4 或 aiase/gemini-2.5-flash
-hermes skills list   # 應看到 hello-aiase 與你的 text2sql-loweiwei 等
-```
-
-### 4. 跑煙霧測試與本地 dev set
-
-```bash
-# (a) 煙霧測試:hello-aiase 能跑就代表 Hermes ↔ LiteLLM ↔ skill 串得通
-hermes chat --toolsets skills -q '/hello-aiase {"name":"world"}'
-
-# (b) 本地 dev set 自測(對你的 Basic skill)
-# 第一次自測前,先在本機產生 Basic dev set 的 SQLite 檔(dbs/*.sqlite 不入版控,需自行生成):
 python dev_set/basic/build_dbs.py
-# 之後就能跑 Basic 自測(run_dev 會在這些 DB 上以 bag equality 比對你的 SQL 與 gold_sql):
-python run_dev.py --skill text2sql-loweiwei --track basic
-
-# (c) Pairwise(對 reference 對手自測)
-python run_dev.py --skill code-author-loweiwei --track pairwise --role code-author
-python run_dev.py --skill bug-hunter-loweiwei  --track pairwise --role bug-hunter
 ```
 
-`run_dev.py` 會把結果寫進 `dev_run_results/`。
-
----
-
-## 倉庫結構
-
-```
-.
-├── README.md                              ← 你正在看
-├── requirements.txt                       ← 本地 dev 用,radon/pytest/PyYAML
-├── run_dev.py                             ← 本地自測:驅動 hermes chat -q + 比對
-├── verify_repo.py                         ← 繳交前自我檢查
-├── PAIRWISE_ROLE.md                       ← 必交,宣告 Pairwise 角色
-├── OPEN_TRACK.md                          ← 必交,Open Track 七區塊宣告
-├── report.md                              ← 必交,設計決策 + 失敗分析
-├── docs/                                  ← gateway / env 範例
-│   ├── hermes-config.example.yaml
-│   └── hermes-env.example
-├── skills/                                ← 你的 skill 與 reference 對手
-│   ├── hello-aiase/                       ← 煙霧測試,勿改
-│   ├── text2sql-loweiwei/                 ← Basic Track 骨架,改名後填邏輯
-│   ├── code-author-loweiwei/              ← Pairwise Code Author 骨架
-│   ├── bug-hunter-loweiwei/               ← Pairwise Bug Hunter 骨架
-│   ├── (Open Track 自建:open-<short-name>-loweiwei/,參考 OPEN_TRACK.md)
-│   ├── reference-bug-hunter-conservative/ ← 課程提供,本機自測 Pairwise 對手
-│   ├── reference-bug-hunter-aggressive/
-│   ├── reference-bug-hunter-noisy/
-│   ├── reference-author-clean/
-│   ├── reference-author-buggy/
-│   └── reference-author-tricky/
-├── dev_set/
-│   ├── basic/                             ← Basic Track 公開 dev set(含答案)
-│   │   ├── task_nl2sql_*.json
-│   │   ├── dbs/                           ← 對應 sqlite(用 build_dbs.py 生)
-│   │   └── build_dbs.py
-│   └── pairwise/
-│       ├── task_pairwise_EXAMPLE.json
-│       └── reference_tasks/               ← 含 ground-truth bug 標註
-└── tests/                                 ← 確定性元件的 pytest
-```
-
----
-
-## 必交檔案清單
-
-繳交 deadline(2026/6/16 23:59 Asia/Taipei)前,確認 default branch 上有:
-
-- [ ] `skills/text2sql-loweiwei/SKILL.md` + scripts(Basic Track)
-- [ ] `skills/code-author-loweiwei/` **或** `skills/bug-hunter-loweiwei/`(Pairwise 二擇一)
-- [ ] `skills/open-<short-name>-loweiwei/`(Open Track,自取 short-name)
-- [ ] `PAIRWISE_ROLE.md`(指向上面選的 Pairwise skill)
-- [ ] `OPEN_TRACK.md`(七區塊齊全)
-- [ ] `report.md`
-
----
-
-## 繳交前自我檢查
+執行完整離線測試：
 
 ```bash
-python verify_repo.py --github-id <your_github_id>
+make test
 ```
 
-會檢查 folder name 一致性、`SKILL.md` 必填欄位、`OPEN_TRACK.md` 七區塊、無疑似 token、無絕對路徑。輸出 `verify_report.json`。
+使用 Docker 重現：
 
-詳細檢查清單見規格書 §5.7。
+```bash
+docker build -t verifiable-llm-se-agents .
+docker run --rm verifiable-llm-se-agents
+```
 
----
+常用指令：
 
-## 重要規則(摘要,以規格書為準)
+```bash
+make selftest
+make verify
+make benchmark
+make evidence
+```
 
-1. **不用 MCP**:本地確定性 helper 一律放 `scripts/`,不可以額外起 MCP server。
-2. **輸出契約**:每個 skill 的最後一個動作 = 一段 ```` ```json ```` fenced block。多段時評分器只取最後一段。
-3. **無外網**:評分環境無外網;只允許課程的 LiteLLM Gateway。
-4. **無絕對路徑**:`/Users/...`、`C:\Users\...`、`/home/<name>/...` 全部禁止。
-5. **dependency pin 版本**:`scripts/requirements.txt` 必須 pin 版本。
-6. **task_id**:輸入有 `task_id`,輸出的 `task_id` 必須完全相同。
-7. **model-agnostic**:評分模型為 held-out,別寫死在某顆模型的脾氣上。
+執行 Hermes/model 端到端開發評測：
 
----
+```bash
+python run_dev.py --skill text2sql-loweiwei --track basic
+python run_dev.py --skill code-author-loweiwei --track pairwise --role code-author
+python run_dev.py --skill bug-hunter-loweiwei --track pairwise --role bug-hunter
+```
 
-## 開發策略(建議)
+Hermes 設定範例位於 [`docs/hermes-config.example.yaml`](docs/hermes-config.example.yaml) 與 [`docs/hermes-env.example`](docs/hermes-env.example)。不要提交真實 token。
 
-1. **先用 `gemma4` 反覆迭代**(免費,不耗你的 2 美元上限)。
-2. 基礎穩了再切 `gemini-2.5-flash` 驗一輪跨模型不退步(計入 2 美元)。
-3. `claude-haiku-4-5` 是 held-out,**開發期取不到**(別賭它的脾氣)。
-4. 多用 `run_dev.py` —— dev set 含答案,是你唯一可靠的自我檢驗工具。
+## Repository Layout
 
+```text
+skills/                  四個個人 Skill 與課程 reference fixtures
+dev_set/                 課程提供的 public development tasks
+tests/                   deterministic test suite
+scripts/                 benchmark、ablation、evidence scripts
+artifacts/               可重現的驗證與 benchmark 摘要
+docs/                    技術報告、評測說明、環境與貢獻來源
+run_dev.py               Hermes end-to-end development evaluator
+verify_repo.py           repository contract verifier
+OPEN_TRACK.md            Open Test Killer 完整規格
+AI_Review.md             AIASE 2026 課程評閱回饋
+report.md                原始課程專題報告
+```
+
+## 保留文件
+
+| Document | Purpose |
+|---|---|
+| [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) | 完整技術報告 |
+| [`docs/EVALUATION.md`](docs/EVALUATION.md) | 成果數字來源、限制與 claims policy |
+| [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) | Python、Hermes、Docker 環境說明 |
+| [`docs/CONTRIBUTIONS.md`](docs/CONTRIBUTIONS.md) | 個人實作、課程素材與 AI 工具使用說明 |
+| [`SECURITY.md`](SECURITY.md) | 安全限制與 responsible use |
+
+## 限制
+
+- Public development tasks 曾用於開發與調整，不能視為 held-out benchmark。
+- 老師 private evaluation 只提供 aggregate evidence，private tasks 與逐題 labels 無法公開重跑。
+- Portfolio branch 的後續整理尚未接受同一套 private re-evaluation。
+- Child-process limits 可降低 runaway code 風險，但不是完整 security sandbox。
+- 端到端模型結果可能受 provider、模型版本與 Hermes 設定影響。

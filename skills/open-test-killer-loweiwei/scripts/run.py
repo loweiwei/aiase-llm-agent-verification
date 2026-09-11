@@ -321,8 +321,8 @@ def _greedy_select(candidates: list[dict], max_tests: int, mutant_order: list[st
             newly = cand["kills_set"] & remaining
             if not newly:
                 continue
-            key = (len(newly), -cand["order"], tuple([-ord(ch) for ch in cand["id"]]))
-            if best is None or key > best_key:
+            key = (-len(newly), int(cand["order"]), str(cand["id"]))
+            if best is None or key < best_key:
                 best = cand
                 best_key = key
         if best is None:

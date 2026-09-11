@@ -56,6 +56,8 @@ python skills/open-test-killer-loweiwei/scripts/regression.py
 
 `max_tests` must be an integer `>= 0`. `mutants` must be a non-empty array. `candidate_inputs` must be a non-empty array. `description` is optional metadata and is not required by `run.py`.
 
+Evaluation uses two explicit safety budgets. `MAX_EVAL_CALLS=2000` bounds the number of reference/mutant executions so a large candidate-mutant matrix cannot consume unbounded time. `MAX_EXACT_COMBINATIONS=25000` bounds the combinatorial selection phase; instances above this threshold use deterministic greedy selection. These values keep public scenarios comfortably in exact mode while providing a predictable upper bound for larger inputs. They are engineering limits rather than learned parameters and should be revisited with scaling experiments.
+
 成功結果檔 JSON schema：
 
 ```json

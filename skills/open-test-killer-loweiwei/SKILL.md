@@ -7,6 +7,11 @@ metadata:
     tags: [testing, mutation-testing, open-track, aiase-2026]
     category: code
     requires_toolsets: [terminal]
+required_environment_variables:
+  - name: AIASE_RESULT_PATH
+    prompt: Runtime result file path
+    required_for: file-based AIASE result output
+    optional: true
 ---
 
 # Test Killer Skill

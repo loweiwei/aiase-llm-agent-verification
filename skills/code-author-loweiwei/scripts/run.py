@@ -9,6 +9,7 @@ import copy
 import io
 import json
 import keyword
+import multiprocessing as mp
 import os
 import re
 import signal
@@ -21,6 +22,8 @@ from typing import Any
 CASE_TIMEOUT_SEC = 0.25
 MAX_CASES = 20
 MAX_ERROR_LEN = 300
+WORKER_MEMORY_BYTES = 512 * 1024 * 1024
+WORKER_CPU_SECONDS = 3
 CANDIDATE_MARKER = "__AIASERUN_CANDIDATE_CODE_V1__"
 BANNED_CALLS = {"__import__", "eval", "exec", "open", "compile", "input", "breakpoint", "print"}
 BANNED_ATTR_CALLS = {"import_module", "system", "popen", "remove", "unlink", "rmdir", "mkdir", "makedirs", "rename"}
@@ -455,7 +458,7 @@ def _normalize_case(case: Any) -> tuple[list, dict, Any, str | None]:
     return [], kwargs, expected, "missing input/args/kwargs"
 
 
-def _run_cases(code: str, entry: str, cases: list[dict]) -> tuple[int, int, list[str]]:
+def _run_cases_in_process(code: str, entry: str, cases: list[dict]) -> tuple[int, int, list[str]]:
     errors: list[str] = []
     ns: dict[str, Any] = {}
     try:
@@ -500,6 +503,71 @@ def _run_cases(code: str, entry: str, cases: list[dict]) -> tuple[int, int, list
         else:
             errors.append(f"mismatch on {args!r}: got {got!r}, expected {expected!r}")
     return passed, min(len(cases), MAX_CASES) - passed, _limit_errors(errors)
+
+
+def _apply_worker_limits() -> None:
+    try:
+        import resource
+
+        resource.setrlimit(resource.RLIMIT_CPU, (WORKER_CPU_SECONDS, WORKER_CPU_SECONDS))
+        resource.setrlimit(resource.RLIMIT_AS, (WORKER_MEMORY_BYTES, WORKER_MEMORY_BYTES))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (1024 * 1024, 1024 * 1024))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        if hasattr(resource, "RLIMIT_NPROC"):
+            resource.setrlimit(resource.RLIMIT_NPROC, (16, 16))
+    except (ImportError, OSError, ValueError):
+        pass
+
+
+def _run_cases_worker(code: str, entry: str, cases: list[dict], work_dir: str, connection: Any) -> None:
+    try:
+        os.setsid()
+        os.chdir(work_dir)
+        os.environ.clear()
+        os.environ.update({"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
+        _apply_worker_limits()
+        connection.send(_run_cases_in_process(code, entry, cases))
+    except BaseException as exc:
+        connection.send((0, min(len(cases), MAX_CASES), [f"worker error: {type(exc).__name__}: {exc}"]))
+    finally:
+        connection.close()
+
+
+def _run_cases(code: str, entry: str, cases: list[dict]) -> tuple[int, int, list[str]]:
+    if "fork" not in mp.get_all_start_methods():
+        return _run_cases_in_process(code, entry, cases)
+    context = mp.get_context("fork")
+    parent, child = context.Pipe(duplex=False)
+    work_dir = tempfile.TemporaryDirectory(prefix="aiase_code_author_")
+    process = context.Process(target=_run_cases_worker, args=(code, entry, cases, work_dir.name, child), daemon=True)
+    process.start()
+    child.close()
+    timeout = max(2.0, CASE_TIMEOUT_SEC * (min(len(cases), MAX_CASES) + 2) + 1.0)
+    try:
+        if parent.poll(timeout):
+            result = parent.recv()
+            _kill_worker_group(process)
+            return result
+        _kill_worker_group(process)
+        return 0, min(len(cases), MAX_CASES), ["sandbox worker timeout"]
+    except (EOFError, OSError):
+        _kill_worker_group(process)
+        return 0, min(len(cases), MAX_CASES), [f"sandbox worker exited with code {process.exitcode}"]
+    finally:
+        parent.close()
+        work_dir.cleanup()
+
+
+def _kill_worker_group(process: Any) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.join(0.5)
+    if process.is_alive():
+        process.kill()
+        process.join(0.5)
 
 
 def _norm_name(text: str) -> str:

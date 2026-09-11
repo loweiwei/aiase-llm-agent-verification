@@ -43,10 +43,8 @@ def validate_basic_schema(obj: dict, task_id: str):
 
 
 def bag_equal(rows_a, rows_b) -> bool:
-    """order-insensitive multiset 比對：列順序不計、欄位順序不計、重複列次數計入。"""
-    def norm(rows):
-        return Counter(tuple(sorted(repr(x) for x in r)) for r in rows)
-    return norm(rows_a) == norm(rows_b)
+    """Compare SQL rows as a multiset; row order is ignored, column order is not."""
+    return Counter(tuple(row) for row in rows_a) == Counter(tuple(row) for row in rows_b)
 
 
 def run_sql(db_path: str, sql: str):

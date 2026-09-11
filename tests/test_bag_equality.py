@@ -1,5 +1,6 @@
-"""Tests for run_dev.bag_equal — multiset equality on SQL result rows."""
+"""Tests for the grading-path SQL multiset comparator."""
 
+from aiase_contract import bag_equal as contract_bag_equal
 from run_dev import bag_equal
 
 
@@ -66,3 +67,13 @@ def test_bytes_handled():
     a = [(b"data",)]
     b = [(b"data",)]
     assert bag_equal(a, b)
+
+
+def test_public_helper_matches_grading_contract():
+    cases = [
+        ([(1, "a"), (2, "b")], [(2, "b"), (1, "a")]),
+        ([("Alice", "CS")], [("CS", "Alice")]),
+        ([(1,), (1,)], [(1,)]),
+    ]
+    for left, right in cases:
+        assert bag_equal(left, right) == contract_bag_equal(left, right)

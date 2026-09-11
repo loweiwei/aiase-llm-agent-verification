@@ -17,6 +17,7 @@ import inspect
 import io
 import json
 import math
+import multiprocessing as mp
 import os
 import re
 import signal
@@ -33,6 +34,9 @@ ALLOWED_TYPES = {
 }
 ALLOWED_SEVERITIES = {"critical", "high", "medium", "low"}
 TIME_LIMIT = 0.08
+AUDIT_PROCESS_TIMEOUT = 8.0
+WORKER_MEMORY_BYTES = 512 * 1024 * 1024
+WORKER_CPU_SECONDS = 5
 REPORT_DELIMITER = "__AIASE_BUG_REPORT_V1__"
 _PLACEHOLDER_NAMES = {
     "arr", "array", "nums", "num", "numbers", "target",
@@ -1428,11 +1432,13 @@ def _normalize_candidate_report(payload: dict, report: dict | None) -> dict:
 def _normalize_with_audit(payload: dict, report: dict | None) -> dict:
     candidate = _normalize_candidate_report(payload, report)
     if candidate.get("bugs"):
+        audit = _audit_payload(payload)
+        if audit.get("bugs") and float(audit.get("confidence", 0.0)) >= 0.8:
+            return audit
         first = candidate["bugs"][0]
         broad_from_def = int(first.get("line_start", 1) or 1) == 1 and int(first.get("line_end", 1) or 1) - 1 >= 3
         broad_range = int(first.get("line_end", 1) or 1) - int(first.get("line_start", 1) or 1) >= 2
         if broad_from_def or broad_range:
-            audit = _audit_payload(payload)
             audit_bugs = audit.get("bugs") or []
             if audit_bugs and int(audit_bugs[0].get("line_end", 1) or 1) == int(audit_bugs[0].get("line_start", 1) or 1):
                 return audit
@@ -1536,7 +1542,7 @@ def _payload_report_from_cli(args: Any) -> tuple[dict, dict | None]:
     return payload, report
 
 
-def _audit_payload(payload: dict) -> dict:
+def _audit_payload_in_process(payload: dict) -> dict:
     task_id = str(_payload_value(payload, ("task_id", "id")) or "")
     desc = _extract_description(payload)
     probe_desc = f"{desc} {_extract_constraints_text(payload)}"
@@ -1596,6 +1602,71 @@ def _audit_payload(payload: dict) -> dict:
             # Ignore likely harness arity mismatches; probes match positional arity by construction.
             findings.append(_make_finding(task_id, desc, lines, tree, entry, {"kind": "generic", "status": st, "line": line, "exc": exc, "probe": probe}))
     return _final_contract(task_id, findings, 0.55)
+
+
+def _apply_worker_limits() -> None:
+    try:
+        import resource
+
+        resource.setrlimit(resource.RLIMIT_CPU, (WORKER_CPU_SECONDS, WORKER_CPU_SECONDS))
+        resource.setrlimit(resource.RLIMIT_AS, (WORKER_MEMORY_BYTES, WORKER_MEMORY_BYTES))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (1024 * 1024, 1024 * 1024))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        if hasattr(resource, "RLIMIT_NPROC"):
+            resource.setrlimit(resource.RLIMIT_NPROC, (16, 16))
+    except (ImportError, OSError, ValueError):
+        pass
+
+
+def _audit_worker(payload: dict, work_dir: str, connection: Any) -> None:
+    try:
+        os.setsid()
+        os.chdir(work_dir)
+        os.environ.clear()
+        os.environ.update({"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
+        _apply_worker_limits()
+        connection.send(_audit_payload_in_process(payload))
+    except BaseException:
+        task_id = str(_payload_value(payload, ("task_id", "id")) or "")
+        connection.send(_contract(task_id, None, 0.0))
+    finally:
+        connection.close()
+
+
+def _audit_payload(payload: dict) -> dict:
+    if "fork" not in mp.get_all_start_methods():
+        return _audit_payload_in_process(payload)
+    context = mp.get_context("fork")
+    parent, child = context.Pipe(duplex=False)
+    work_dir = tempfile.TemporaryDirectory(prefix="aiase_bug_hunter_")
+    process = context.Process(target=_audit_worker, args=(payload, work_dir.name, child), daemon=True)
+    process.start()
+    child.close()
+    try:
+        if parent.poll(AUDIT_PROCESS_TIMEOUT):
+            result = parent.recv()
+            _kill_worker_group(process)
+            return result
+        _kill_worker_group(process)
+    except (EOFError, OSError):
+        _kill_worker_group(process)
+    finally:
+        parent.close()
+        work_dir.cleanup()
+    task_id = str(_payload_value(payload, ("task_id", "id")) or "")
+    return _contract(task_id, None, 0.0)
+
+
+def _kill_worker_group(process: Any) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.join(0.5)
+    if process.is_alive():
+        process.kill()
+        process.join(0.5)
 
 
 def main(argv: list[str]) -> int:

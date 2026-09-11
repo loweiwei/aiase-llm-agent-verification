@@ -268,6 +268,35 @@ def test_mixed_line_clamp() -> None:
     _assert(obj["bugs"][0]["line_start"] == 2 and obj["bugs"][0]["line_end"] == 2, "line clamp upper")
 
 
+def test_deterministic_evidence_corrects_wrong_known_task_report() -> None:
+    code = "def merge_intervals(intervals):\n    intervals.sort(key=lambda x: x[0])\n    merged = [intervals[0]]\n    for cur in intervals[1:]:\n        if cur[0] <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], cur[1])\n        else:\n            merged.append(cur)\n    return merged\n"
+    payload = _payload(
+        "merge_empty",
+        "Implement merge_intervals(intervals). Empty input returns []. Touching intervals merge.",
+        "merge_intervals",
+        code,
+    )
+    wrong_report = {
+        "verdict": "buggy",
+        "bugs": [{
+            "line_start": 2,
+            "line_end": 2,
+            "severity": "low",
+            "type": "inefficient",
+            "description": "The implementation sorts the complete interval list on every call, adding O(n log n) work.",
+            "suggested_fix": "Replace sorting with a linear scan.",
+        }],
+        "confidence": 0.9,
+    }
+
+    obj = _mixed(payload, wrong_report)
+
+    _schema(obj)
+    _assert(obj["verdict"] == "buggy", "deterministic bug retained")
+    _assert(obj["bugs"][0]["line_start"] == 3, f"empty-input line corrected: {obj}")
+    _assert(obj["bugs"][0]["type"] == "edge_case", f"empty-input type corrected: {obj}")
+
+
 def test_mixed_placeholder_filtered() -> None:
     payload = _payload("cand_placeholder", "binary search", "binary_search", "def binary_search(arr, target):\n    return -1\n")
     report = {"verdict": "buggy", "bugs": [{"line_start": 1, "line_end": 1, "severity": "high", "type": "logic_error", "description": "Fails for ['arr', 'target'] placeholder input.", "suggested_fix": "Handle ['arr', 'target']."}], "confidence": 0.9}

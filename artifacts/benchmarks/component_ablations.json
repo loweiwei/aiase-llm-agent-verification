@@ -1,0 +1,219 @@
+{
+  "scope": "deterministic_component_ablation_on_development_reference_fixtures",
+  "text2sql": {
+    "dataset": "curated_development_validation_fixtures",
+    "fixture_count": 6,
+    "format_only_invalid_acceptance_rate": 1.0,
+    "schema_validation_invalid_acceptance_rate": 0.0,
+    "rows": [
+      {
+        "fixture": "valid",
+        "should_accept": true,
+        "format_only_accepts": true,
+        "schema_validation_accepts": true,
+        "validation_error": ""
+      },
+      {
+        "fixture": "unknown_column",
+        "should_accept": false,
+        "format_only_accepts": true,
+        "schema_validation_accepts": false,
+        "validation_error": "no such column: missing"
+      },
+      {
+        "fixture": "unknown_table",
+        "should_accept": false,
+        "format_only_accepts": true,
+        "schema_validation_accepts": false,
+        "validation_error": "no such table: Missing"
+      },
+      {
+        "fixture": "ambiguous_column",
+        "should_accept": false,
+        "format_only_accepts": true,
+        "schema_validation_accepts": false,
+        "validation_error": "ambiguous column name: name"
+      },
+      {
+        "fixture": "multiple_statements",
+        "should_accept": false,
+        "format_only_accepts": true,
+        "schema_validation_accepts": false,
+        "validation_error": "Multiple SQL statements not allowed."
+      },
+      {
+        "fixture": "write_statement",
+        "should_accept": false,
+        "format_only_accepts": true,
+        "schema_validation_accepts": false,
+        "validation_error": "DDL/DML keyword detected."
+      }
+    ]
+  },
+  "code_author": {
+    "dataset": "course_reference_buggy_candidates",
+    "task_count": 5,
+    "raw_buggy_candidate_pass_rate": 0.0,
+    "sample_validated_candidate_pass_rate": 0.0,
+    "template_only_pass_rate": 1.0,
+    "full_validation_fallback_pass_rate": 1.0,
+    "unsafe_fixture_count": 5,
+    "format_only_unsafe_acceptance_rate": 1.0,
+    "ast_policy_unsafe_acceptance_rate": 0.0,
+    "policy_rows": [
+      {
+        "fixture": "syntax_error",
+        "format_only_accepts": true,
+        "ast_policy_accepts": false,
+        "errors": [
+          "syntax error: invalid syntax (<unknown>, line 1)"
+        ]
+      },
+      {
+        "fixture": "missing_entry",
+        "format_only_accepts": true,
+        "ast_policy_accepts": false,
+        "errors": [
+          "entry function 'solution' not defined"
+        ]
+      },
+      {
+        "fixture": "banned_import",
+        "format_only_accepts": true,
+        "ast_policy_accepts": false,
+        "errors": [
+          "forbidden import: os",
+          "sandbox violation: os"
+        ]
+      },
+      {
+        "fixture": "banned_open",
+        "format_only_accepts": true,
+        "ast_policy_accepts": false,
+        "errors": [
+          "sandbox violation: open"
+        ]
+      },
+      {
+        "fixture": "unsafe_top_level",
+        "format_only_accepts": true,
+        "ast_policy_accepts": false,
+        "errors": [
+          "unsafe top-level statement: Expr",
+          "sandbox violation: print"
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "task_id": "task_pair_001",
+        "raw_buggy_candidate_passes": false,
+        "sample_validated_candidate_passes": false,
+        "template_only_passes": true,
+        "full_validation_passes": true,
+        "full_selected_source": "deterministic template: merge_intervals"
+      },
+      {
+        "task_id": "task_pair_002",
+        "raw_buggy_candidate_passes": false,
+        "sample_validated_candidate_passes": false,
+        "template_only_passes": true,
+        "full_validation_passes": true,
+        "full_selected_source": "deterministic template: binary_search"
+      },
+      {
+        "task_id": "task_pair_003",
+        "raw_buggy_candidate_passes": false,
+        "sample_validated_candidate_passes": false,
+        "template_only_passes": true,
+        "full_validation_passes": true,
+        "full_selected_source": "deterministic template: parse_csv_line"
+      },
+      {
+        "task_id": "task_pair_004",
+        "raw_buggy_candidate_passes": false,
+        "sample_validated_candidate_passes": false,
+        "template_only_passes": true,
+        "full_validation_passes": true,
+        "full_selected_source": "deterministic template: unique_paths"
+      },
+      {
+        "task_id": "task_pair_005",
+        "raw_buggy_candidate_passes": false,
+        "sample_validated_candidate_passes": false,
+        "template_only_passes": true,
+        "full_validation_passes": true,
+        "full_selected_source": "deterministic template: kth_smallest"
+      }
+    ]
+  },
+  "bug_hunter": {
+    "dataset": "course_reference_clean_buggy_tricky_variants",
+    "bug_variant_count": 10,
+    "report_only_recall": 0.0,
+    "dynamic_audit_recall": 0.5,
+    "dynamic_audit_clean_false_positive_rate": 0.0,
+    "rows": [
+      {
+        "task_id": "task_pair_001",
+        "variant": "buggy",
+        "report_only_hit": false,
+        "dynamic_audit_hit": true
+      },
+      {
+        "task_id": "task_pair_001",
+        "variant": "tricky",
+        "report_only_hit": false,
+        "dynamic_audit_hit": true
+      },
+      {
+        "task_id": "task_pair_002",
+        "variant": "buggy",
+        "report_only_hit": false,
+        "dynamic_audit_hit": true
+      },
+      {
+        "task_id": "task_pair_002",
+        "variant": "tricky",
+        "report_only_hit": false,
+        "dynamic_audit_hit": false
+      },
+      {
+        "task_id": "task_pair_003",
+        "variant": "buggy",
+        "report_only_hit": false,
+        "dynamic_audit_hit": true
+      },
+      {
+        "task_id": "task_pair_003",
+        "variant": "tricky",
+        "report_only_hit": false,
+        "dynamic_audit_hit": false
+      },
+      {
+        "task_id": "task_pair_004",
+        "variant": "buggy",
+        "report_only_hit": false,
+        "dynamic_audit_hit": true
+      },
+      {
+        "task_id": "task_pair_004",
+        "variant": "tricky",
+        "report_only_hit": false,
+        "dynamic_audit_hit": false
+      },
+      {
+        "task_id": "task_pair_005",
+        "variant": "buggy",
+        "report_only_hit": false,
+        "dynamic_audit_hit": false
+      },
+      {
+        "task_id": "task_pair_005",
+        "variant": "tricky",
+        "report_only_hit": false,
+        "dynamic_audit_hit": false
+      }
+    ]
+  }
+}
